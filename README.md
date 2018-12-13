@@ -31,7 +31,7 @@ codecCPP includes code taken from
 
 https://github.com/Blosc/c-blosc.git
 
-The source code from c-blosc/blosc was copied to codecCPP/bloscBuild/src.
+The source code from **c-blosc/blosc** was copied to **codecCPP/bloscBuild/src**.
 
 This code was then build via the epics-base build system.
 
