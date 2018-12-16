@@ -1,0 +1,7 @@
+record(waveform, "$(name)")
+{
+        field(NELM,"$(nelem)")
+        field(NORD,"$(nelem)")
+        field(FTVL,"$(type)")
+	field(EGU, "Counts")
+}

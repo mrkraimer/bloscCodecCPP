@@ -5,8 +5,16 @@ include $(TOP)/configure/CONFIG
 
 DIRS += configure
 
-DIRS += bloscBuild
-bloscBuild_DEPEND_DIRS = configure
+DIRS += bloscSrc
+bloscSrc_DEPEND_DIRS = configure
+
+DIRS += codecRecordSrc
+codecRecordSrc_DEPEND_DIRS = configure
+
+DIRS += ioc
+ioc_DEPEND_DIRS = configure
+
+DIRS += iocBoot
 
 
 include $(TOP)/configure/RULES_TOP

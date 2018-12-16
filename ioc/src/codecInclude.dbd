@@ -1,0 +1,7 @@
+include "base.dbd"
+include "PVAServerRegister.dbd"
+include "PVAClientRegister.dbd"
+include "registerChannelProviderLocal.dbd"
+include "qsrv.dbd"
+include  "codecRegister.dbd"
+include  "pvArrayRegister.dbd"

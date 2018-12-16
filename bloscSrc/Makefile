@@ -4,7 +4,7 @@ include $(TOP)/configure/CONFIG
 
 LIBRARY = blosc
 
-LIBBLOSC = $(TOP)/bloscBuild
+LIBBLOSC = $(TOP)/bloscSrc
 
 SRC_DIRS = $(LIBBLOSC)/src
 
