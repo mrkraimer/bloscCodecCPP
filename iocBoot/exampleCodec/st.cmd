@@ -23,5 +23,5 @@ pvArrayCreateRecord PVRubyteArray pvUByte
 pvArrayCreateRecord PVRushortArray pvUShort
 pvArrayCreateRecord PVRuintArray pvUInt
 pvArrayCreateRecord PVRulongArray pvULong
-codecCreateRecord codecRecord PVRshortArray blosc
+codecCreateRecord codecRecord PVRubyteArray blosc
 

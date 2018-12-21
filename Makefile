@@ -5,8 +5,8 @@ include $(TOP)/configure/CONFIG
 
 DIRS += configure
 
-DIRS += bloscSrc
-bloscSrc_DEPEND_DIRS = configure
+DIRS += codecBloscSrc
+codecBloscSrc_DEPEND_DIRS = configure
 
 DIRS += codecRecordSrc
 codecRecordSrc_DEPEND_DIRS = configure

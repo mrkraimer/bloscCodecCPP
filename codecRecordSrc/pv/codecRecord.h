@@ -15,13 +15,11 @@
 #include <pv/alarm.h>
 #include <pv/pvAlarm.h>
 #include <pv/pvDatabase.h>
-#include <pv/pvaClient.h>
-
+#include <pv/codecBlosc.h>
 
 #include <shareLib.h>
 
 namespace epics { namespace codec {
-
 
 class CodecRecord;
 typedef std::tr1::shared_ptr<CodecRecord> CodecRecordPtr;
@@ -45,13 +43,26 @@ private:
     CodecRecord(
         std::string const & recordName,
         epics::pvData::PVStructurePtr const & pvStructure);
+    void connect();
+    void disconnect();
+    void setAlarm(
+        std::string const & message,
+        epics::pvData::AlarmSeverity severity,
+        epics::pvData::AlarmStatus status);
+
+    CodecBloscPtr codecBlosc;
+    bool connected;
+    epics::pvData::PVStructurePtr pvStructure;
+    epics::pvDatabase::PVRecordPtr pvRecord;
+    epics::pvData::PVStringPtr pvChannelName;
     epics::pvData::PVUByteArrayPtr pvValue;
     epics::pvData::PVStructurePtr pvAlarmField;
     epics::pvData::PVAlarm pvAlarm;
     epics::pvData::Alarm alarm;
     epics::pvData::PVStructurePtr pvTimeStampField;
     epics::pvData::PVTimeStamp pvTimeStamp;
-    epics::pvData::TimeStamp timeStamp; 
+    epics::pvData::TimeStamp timeStamp;
+    epics::pvData::PVScalarArrayPtr pvScalarArray;
 };
 
 }}
