@@ -157,6 +157,11 @@ void CodecRecord::process()
                       pvStructure->getSubField<PVUByteArray>("value"),
                       pvScalarArray,
                       pvStructure->getSubField<PVStructure>("bloscArgs")); 
+                  if(result) {
+                      setAlarm("compressBlosc success",noAlarm,clientStatus);
+                  } else {
+                      setAlarm("compressBlosc failure",invalidAlarm,clientStatus);
+                  }
                   return;
               }
               setAlarm("unknown codecName",invalidAlarm,clientStatus);
@@ -171,7 +176,12 @@ void CodecRecord::process()
                   bool result = codecBlosc->decompressBlosc(
                       pvStructure->getSubField<PVUByteArray>("value"),
                       pvScalarArray,
-                      pvStructure->getSubField<PVStructure>("bloscArgs")); 
+                      pvStructure->getSubField<PVStructure>("bloscArgs"));
+                  if(result) {
+                      setAlarm("decompressBlosc success",noAlarm,clientStatus);
+                  } else {
+                      setAlarm("decompressBlosc failure",invalidAlarm,clientStatus);
+                  }                
                   return;
               }
               setAlarm("unknown codecName",invalidAlarm,clientStatus);

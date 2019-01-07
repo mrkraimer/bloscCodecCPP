@@ -14,8 +14,11 @@ codecRecordSrc_DEPEND_DIRS = configure
 DIRS += ioc
 ioc_DEPEND_DIRS = configure
 
-DIRS += iocBoot
+DIRS += test
+test_DEPEND_DIRS = configure
 
+DIRS += iocBoot
+iocBoot_DEPEND_DIRS = configure
 
 include $(TOP)/configure/RULES_TOP
 

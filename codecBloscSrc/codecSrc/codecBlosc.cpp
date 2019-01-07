@@ -14,6 +14,7 @@
 #include <pv/alarm.h>
 #include <pv/pvAlarm.h>
 #include <pv/pvDatabase.h>
+#include <pv/pvIntrospect.h>
 
 #include <shareLib.h>
 #include <epicsExport.h>
@@ -59,7 +60,6 @@ CodecBloscPtr CodecBlosc::create()
     CodecBloscPtr codecBlosc(new CodecBlosc());
     return codecBlosc;
 }
-
 CodecBlosc::CodecBlosc(){}
 
 bool CodecBlosc::compressBlosc(
@@ -67,16 +67,9 @@ bool CodecBlosc::compressBlosc(
         const PVScalarArrayPtr & pvSource,
         const PVStructurePtr & pvBloscArgs)
 {
-    BloscArgs bloscArgs;
-    bool result = setBloscArgs(pvSource,&bloscArgs);
-    if(result) result = compressBlosc(pvDest,&bloscArgs,pvBloscArgs);
-    return result;
-}
-
-bool CodecBlosc::setBloscArgs(
-    const PVScalarArrayPtr & pvSource,
-    BloscArgs *bloscArgs)
-{
+    void * decompressAddr = NULL;
+    size_t decompressSize = 0;
+    int elementSize = 0;
     ScalarType scalarType = pvSource->getScalarArray()->getElementType();
     switch(scalarType)
     {
@@ -85,101 +78,101 @@ bool CodecBlosc::setBloscArgs(
              PVByteArrayPtr pvSrc = static_pointer_cast<PVByteArray>(pvSource);
              PVByteArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             bloscArgs->elementSize = 1;
-             bloscArgs->decompressAddr = (void *)sourcedata.data();
-             bloscArgs->decompressSize = pvSource->getLength();
-             return true;
+             elementSize = 1;
+             decompressAddr = (void *)sourcedata.data();
+             decompressSize = pvSource->getLength()*elementSize;
         }
+        break;
     case pvUByte:
         {
              PVUByteArrayPtr pvSrc = static_pointer_cast<PVUByteArray>(pvSource);
              PVUByteArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             bloscArgs->elementSize = 1;
-             bloscArgs->decompressAddr = (void *)sourcedata.data();
-             bloscArgs->decompressSize = pvSource->getLength();
-             return true;
+             elementSize = 1;
+             decompressAddr = (void *)sourcedata.data();
+             decompressSize = pvSource->getLength()*elementSize;
         }
+        break;
     case pvShort:
         {
              PVShortArrayPtr pvSrc = static_pointer_cast<PVShortArray>(pvSource);
              PVShortArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             bloscArgs->elementSize = 2;
-             bloscArgs->decompressAddr = (void *)sourcedata.data();
-             bloscArgs->decompressSize = pvSource->getLength()*bloscArgs->elementSize;
-             return true;
+             elementSize = 1;
+             decompressAddr = (void *)sourcedata.data();
+             decompressSize = pvSource->getLength()*elementSize;
         }
+        break;
     case pvUShort:
         {
              PVUShortArrayPtr pvSrc = static_pointer_cast<PVUShortArray>(pvSource);
              PVUShortArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             bloscArgs->elementSize = 2;
-             bloscArgs->decompressAddr = (void *)sourcedata.data();
-             bloscArgs->decompressSize = pvSource->getLength()*bloscArgs->elementSize;
-             return true;
+             elementSize = 1;
+             decompressAddr = (void *)sourcedata.data();
+             decompressSize = pvSource->getLength()*elementSize;
         }
+        break;
     case pvInt:
         {
              PVIntArrayPtr pvSrc = static_pointer_cast<PVIntArray>(pvSource);
              PVIntArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             bloscArgs->elementSize = 4;
-             bloscArgs->decompressAddr = (void *)sourcedata.data();
-             bloscArgs->decompressSize = pvSource->getLength()*bloscArgs->elementSize;
-             return true;
+             elementSize = 1;
+             decompressAddr = (void *)sourcedata.data();
+             decompressSize = pvSource->getLength()*elementSize;
         }
+        break;
     case pvUInt:
         {
              PVUIntArrayPtr pvSrc = static_pointer_cast<PVUIntArray>(pvSource);
              PVUIntArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             bloscArgs->elementSize = 4;
-             bloscArgs->decompressAddr = (void *)sourcedata.data();
-             bloscArgs->decompressSize = pvSource->getLength()*bloscArgs->elementSize;
-             return true;
+             elementSize = 1;
+             decompressAddr = (void *)sourcedata.data();
+             decompressSize = pvSource->getLength()*elementSize;
         }
+        break;
     case pvLong:
         {
              PVLongArrayPtr pvSrc = static_pointer_cast<PVLongArray>(pvSource);
              PVLongArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             bloscArgs->elementSize = 8;
-             bloscArgs->decompressAddr = (void *)sourcedata.data();
-             bloscArgs->decompressSize = pvSource->getLength()*bloscArgs->elementSize;
-             return true;
+             elementSize = 1;
+             decompressAddr = (void *)sourcedata.data();
+             decompressSize = pvSource->getLength()*elementSize;
         }
+        break;
     case pvULong:
         {
              PVULongArrayPtr pvSrc = static_pointer_cast<PVULongArray>(pvSource);
              PVULongArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             bloscArgs->elementSize = 8;
-             bloscArgs->decompressAddr = (void *)sourcedata.data();
-             bloscArgs->decompressSize = pvSource->getLength()*bloscArgs->elementSize;
-             return true;
+             elementSize = 1;
+             decompressAddr = (void *)sourcedata.data();
+             decompressSize = pvSource->getLength()*elementSize;
         }
+        break;
     case pvFloat:
         {
              PVFloatArrayPtr pvSrc = static_pointer_cast<PVFloatArray>(pvSource);
              PVFloatArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             bloscArgs->elementSize = 4;
-             bloscArgs->decompressAddr = (void *)sourcedata.data();
-             bloscArgs->decompressSize = pvSource->getLength()*bloscArgs->elementSize;
-             return true;
+             elementSize = 1;
+             decompressAddr = (void *)sourcedata.data();
+             decompressSize = pvSource->getLength()*elementSize;
         }
+        break;
     case pvDouble:
         {
              PVDoubleArrayPtr pvSrc = static_pointer_cast<PVDoubleArray>(pvSource);
              PVDoubleArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             bloscArgs->elementSize = 8;
-             bloscArgs->decompressAddr = (void *)sourcedata.data();
-             bloscArgs->decompressSize = pvSource->getLength()*bloscArgs->elementSize;
-             return true;
+             elementSize = 1;
+             decompressAddr = (void *)sourcedata.data();
+             decompressSize = pvSource->getLength()*elementSize;
         }
+        break;
     default:
         string mess("CodecBlosc::setBloscArgs pvType ");
         mess += scalarType;
@@ -187,22 +180,13 @@ bool CodecBlosc::setBloscArgs(
         message = mess;
         return false;
     }
-}
-
-bool CodecBlosc::compressBlosc(
-    const epics::pvData::PVUByteArrayPtr & pvDest,
-    BloscArgs *bloscArgs,
-    const PVStructurePtr & pvBloscArgs)
-{
     int clevel = pvBloscArgs->getSubField<PVInt>("level")->get();
     int doshuffle = pvBloscArgs->getSubField<PVInt>("shuffle.index")->get();
     size_t typesize = 1;
-    size_t nbytes = bloscArgs->decompressSize;
-    const void* src = (const void *)bloscArgs->decompressAddr;
+    size_t nbytes = decompressSize;
+    const void* src = (const void *)decompressAddr;
     size_t destsize = nbytes + BLOSC_MAX_OVERHEAD;
-    pvDest->setLength(destsize);
-    PVUByteArray::const_svector destdata;
-    pvDest->getAs(destdata);   
+    PVUByteArray::svector destdata(destsize); 
     void *dest = (void *)destdata.data();
     PVStructurePtr pvCompressor = pvBloscArgs->getSubField<PVStructure>("compressor");
     int index = pvCompressor->getSubField<PVInt>("index")->get();
@@ -220,9 +204,10 @@ bool CodecBlosc::compressBlosc(
         destsize,compressor,
         blocksize,numinternalthreads);
     if(result>0) {
-        pvDest->setLength(result);
+        destdata.resize(result);
+        pvDest->replace(freeze(destdata));
         pvBloscArgs->getSubField<PVInt>("compressedSize")->put(result);
-        pvBloscArgs->getSubField<PVInt>("decompressedSize")->put(bloscArgs->decompressSize);
+        pvBloscArgs->getSubField<PVInt>("decompressedSize")->put(decompressSize);
         return true;
     }
     return false;
@@ -233,28 +218,136 @@ bool CodecBlosc::decompressBlosc(
     const epics::pvData::PVScalarArrayPtr & pvDestination,
     const epics::pvData::PVStructurePtr & pvBloscArgs)
 {
-    BloscArgs bloscArgs;
-    bool result = setBloscArgs(pvDestination,&bloscArgs);
-    if(result) result = decompressBlosc(pvSource,&bloscArgs,pvBloscArgs);
-    return result;
-}
-bool CodecBlosc::decompressBlosc(
-    const epics::pvData::PVUByteArrayPtr & pvSource,
-    BloscArgs *bloscArgs,
-    const epics::pvData::PVStructurePtr & pvBloscArgs)
-{
+    size_t decompressSize = pvBloscArgs->getSubField<PVInt>("decompressedSize")->get();
+    void * decompressAddr = NULL;
+    ScalarType scalarType = pvDestination->getScalarArray()->getElementType();
+    switch(scalarType)
+    {
+    case pvByte:
+        {
+             PVByteArrayPtr pvDest = static_pointer_cast<PVByteArray>(pvDestination);
+             int elementsize = 1;
+             size_t nelements = decompressSize/elementsize;
+             PVByteArray::svector xxx(nelements);
+             PVByteArray::const_svector destdata(freeze(xxx));
+             pvDest->replace(destdata);
+             decompressAddr = (void *)destdata.data();
+        }
+        break;
+    case pvUByte:
+        {
+             PVUByteArrayPtr pvDest = static_pointer_cast<PVUByteArray>(pvDestination);
+             int elementsize = 1;
+             size_t nelements = decompressSize/elementsize;
+             PVUByteArray::svector xxx(nelements);
+             PVUByteArray::const_svector destdata(freeze(xxx));
+             pvDest->replace(destdata);
+             decompressAddr = (void *)destdata.data();
+        }
+        break;
+    case pvShort:
+        {
+             PVShortArrayPtr pvDest = static_pointer_cast<PVShortArray>(pvDestination);
+             int elementsize = 1;
+             size_t nelements = decompressSize/elementsize;
+             PVShortArray::svector xxx(nelements);
+             PVShortArray::const_svector destdata(freeze(xxx));
+             pvDest->replace(destdata);
+             decompressAddr = (void *)destdata.data();
+        }
+        break;
+    case pvUShort:
+        {
+             PVUShortArrayPtr pvDest = static_pointer_cast<PVUShortArray>(pvDestination);
+             int elementsize = 1;
+             size_t nelements = decompressSize/elementsize;
+             PVUShortArray::svector xxx(nelements);
+             PVUShortArray::const_svector destdata(freeze(xxx));
+             pvDest->replace(destdata);
+             decompressAddr = (void *)destdata.data();
+        }
+        break;
+    case pvInt:
+        {
+             PVIntArrayPtr pvDest = static_pointer_cast<PVIntArray>(pvDestination);
+             int elementsize = 1;
+             size_t nelements = decompressSize/elementsize;
+             PVIntArray::svector xxx(nelements);
+             PVIntArray::const_svector destdata(freeze(xxx));
+             pvDest->replace(destdata);
+             decompressAddr = (void *)destdata.data();
+        }
+        break;
+    case pvUInt:
+        {
+             PVUIntArrayPtr pvDest = static_pointer_cast<PVUIntArray>(pvDestination);
+             int elementsize = 1;
+             size_t nelements = decompressSize/elementsize;
+             PVUIntArray::svector xxx(nelements);
+             PVUIntArray::const_svector destdata(freeze(xxx));
+             pvDest->replace(destdata);
+             decompressAddr = (void *)destdata.data();
+             break;
+        }
+        break;
+    case pvLong:
+        {
+             PVLongArrayPtr pvDest = static_pointer_cast<PVLongArray>(pvDestination);
+             int elementsize = 1;
+             size_t nelements = decompressSize/elementsize;
+             PVLongArray::svector xxx(nelements);
+             PVLongArray::const_svector destdata(freeze(xxx));
+             pvDest->replace(destdata);
+             decompressAddr = (void *)destdata.data();
+        }
+        break;
+    case pvULong:
+        {
+             PVULongArrayPtr pvDest = static_pointer_cast<PVULongArray>(pvDestination);
+             int elementsize = 1;
+             size_t nelements = decompressSize/elementsize;
+             PVULongArray::svector xxx(nelements);
+             PVULongArray::const_svector destdata(freeze(xxx));
+             pvDest->replace(destdata);
+             decompressAddr = (void *)destdata.data();
+        }
+        break;
+    case pvFloat:
+        {
+             PVFloatArrayPtr pvDest = static_pointer_cast<PVFloatArray>(pvDestination);
+             int elementsize = 1;
+             size_t nelements = decompressSize/elementsize;
+             PVFloatArray::svector xxx(nelements);
+             PVFloatArray::const_svector destdata(freeze(xxx));
+             pvDest->replace(destdata);
+             decompressAddr = (void *)destdata.data();
+        }
+        break;
+    case pvDouble:
+        {
+             PVDoubleArrayPtr pvDest = static_pointer_cast<PVDoubleArray>(pvDestination);
+             int elementsize = 1;
+             size_t nelements = decompressSize/elementsize;
+             PVDoubleArray::svector xxx(nelements);
+             PVDoubleArray::const_svector destdata(freeze(xxx));
+             pvDest->replace(destdata);
+             decompressAddr = (void *)destdata.data();
+        }
+        break;
+    default:
+        return false;
+    }
     PVUByteArray::const_svector sourcedata;
     pvSource->getAs(sourcedata);   
     void *src = (void *)sourcedata.data();
     int numinternalthreads = 1;
-
     int result = blosc_decompress_ctx(
         src,
-        bloscArgs->decompressAddr,
-        bloscArgs->decompressSize,
+        decompressAddr,
+        decompressSize,
         numinternalthreads);
-    if(result>0) return true;
-    return false;
+    if(result<0) return false;
+    return true;
 }
 
 std::string CodecBlosc::getMessage() { return message;}

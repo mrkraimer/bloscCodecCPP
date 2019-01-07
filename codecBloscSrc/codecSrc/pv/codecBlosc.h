@@ -24,14 +24,6 @@
 
 namespace epics { namespace codec {
 
-class BloscArgs
-{
-public:
-    void * decompressAddr;
-    size_t decompressSize;
-    int elementSize;
-};
-
 class CodecBlosc;
 typedef std::tr1::shared_ptr<CodecBlosc> CodecBloscPtr;
 typedef std::tr1::weak_ptr<CodecBlosc> CodecBloscWPtr;
@@ -54,24 +46,13 @@ static epics::pvData::StructureConstPtr getCodecStructure();
         const epics::pvData::PVUByteArrayPtr & pvDest,
         const epics::pvData::PVScalarArrayPtr & pvSource,
         const epics::pvData::PVStructurePtr & pvBloscArgs);
-    bool compressBlosc(
-        const epics::pvData::PVUByteArrayPtr & pvDest,
-        BloscArgs *bloscArgs,
-        const epics::pvData::PVStructurePtr & pvBloscArgs);
     bool decompressBlosc(
         const epics::pvData::PVUByteArrayPtr & pvSource,
         const epics::pvData::PVScalarArrayPtr & pvDest,
         const epics::pvData::PVStructurePtr & pvBloscArgs);
-    bool decompressBlosc(
-        const epics::pvData::PVUByteArrayPtr & pvSource,
-        BloscArgs *bloscArgs,
-        const epics::pvData::PVStructurePtr & pvBloscArgs);
     std::string getMessage();
     
     void initCodecStructure(const epics::pvData::PVStructurePtr & pvStructure);
-    bool setBloscArgs(
-        const epics::pvData::PVScalarArrayPtr & pvScalarArray,
-        BloscArgs *bloscArgs);
 };
 
 }}
