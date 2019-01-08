@@ -98,7 +98,7 @@ bool CodecBlosc::compressBlosc(
              PVShortArrayPtr pvSrc = static_pointer_cast<PVShortArray>(pvSource);
              PVShortArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             elementSize = 1;
+             elementSize = 2;
              decompressAddr = (void *)sourcedata.data();
              decompressSize = pvSource->getLength()*elementSize;
         }
@@ -108,7 +108,7 @@ bool CodecBlosc::compressBlosc(
              PVUShortArrayPtr pvSrc = static_pointer_cast<PVUShortArray>(pvSource);
              PVUShortArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             elementSize = 1;
+             elementSize = 2;
              decompressAddr = (void *)sourcedata.data();
              decompressSize = pvSource->getLength()*elementSize;
         }
@@ -118,7 +118,7 @@ bool CodecBlosc::compressBlosc(
              PVIntArrayPtr pvSrc = static_pointer_cast<PVIntArray>(pvSource);
              PVIntArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             elementSize = 1;
+             elementSize = 4;
              decompressAddr = (void *)sourcedata.data();
              decompressSize = pvSource->getLength()*elementSize;
         }
@@ -128,7 +128,7 @@ bool CodecBlosc::compressBlosc(
              PVUIntArrayPtr pvSrc = static_pointer_cast<PVUIntArray>(pvSource);
              PVUIntArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             elementSize = 1;
+             elementSize = 4;
              decompressAddr = (void *)sourcedata.data();
              decompressSize = pvSource->getLength()*elementSize;
         }
@@ -138,7 +138,7 @@ bool CodecBlosc::compressBlosc(
              PVLongArrayPtr pvSrc = static_pointer_cast<PVLongArray>(pvSource);
              PVLongArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             elementSize = 1;
+             elementSize = 8;
              decompressAddr = (void *)sourcedata.data();
              decompressSize = pvSource->getLength()*elementSize;
         }
@@ -148,7 +148,7 @@ bool CodecBlosc::compressBlosc(
              PVULongArrayPtr pvSrc = static_pointer_cast<PVULongArray>(pvSource);
              PVULongArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             elementSize = 1;
+             elementSize = 8;
              decompressAddr = (void *)sourcedata.data();
              decompressSize = pvSource->getLength()*elementSize;
         }
@@ -158,7 +158,7 @@ bool CodecBlosc::compressBlosc(
              PVFloatArrayPtr pvSrc = static_pointer_cast<PVFloatArray>(pvSource);
              PVFloatArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             elementSize = 1;
+             elementSize = 4;
              decompressAddr = (void *)sourcedata.data();
              decompressSize = pvSource->getLength()*elementSize;
         }
@@ -168,7 +168,7 @@ bool CodecBlosc::compressBlosc(
              PVDoubleArrayPtr pvSrc = static_pointer_cast<PVDoubleArray>(pvSource);
              PVDoubleArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
-             elementSize = 1;
+             elementSize = 8;
              decompressAddr = (void *)sourcedata.data();
              decompressSize = pvSource->getLength()*elementSize;
         }
@@ -248,7 +248,7 @@ bool CodecBlosc::decompressBlosc(
     case pvShort:
         {
              PVShortArrayPtr pvDest = static_pointer_cast<PVShortArray>(pvDestination);
-             int elementsize = 1;
+             int elementsize = 2;
              size_t nelements = decompressSize/elementsize;
              PVShortArray::svector xxx(nelements);
              PVShortArray::const_svector destdata(freeze(xxx));
@@ -259,7 +259,7 @@ bool CodecBlosc::decompressBlosc(
     case pvUShort:
         {
              PVUShortArrayPtr pvDest = static_pointer_cast<PVUShortArray>(pvDestination);
-             int elementsize = 1;
+             int elementsize = 2;
              size_t nelements = decompressSize/elementsize;
              PVUShortArray::svector xxx(nelements);
              PVUShortArray::const_svector destdata(freeze(xxx));
@@ -270,7 +270,7 @@ bool CodecBlosc::decompressBlosc(
     case pvInt:
         {
              PVIntArrayPtr pvDest = static_pointer_cast<PVIntArray>(pvDestination);
-             int elementsize = 1;
+             int elementsize = 4;
              size_t nelements = decompressSize/elementsize;
              PVIntArray::svector xxx(nelements);
              PVIntArray::const_svector destdata(freeze(xxx));
@@ -281,7 +281,7 @@ bool CodecBlosc::decompressBlosc(
     case pvUInt:
         {
              PVUIntArrayPtr pvDest = static_pointer_cast<PVUIntArray>(pvDestination);
-             int elementsize = 1;
+             int elementsize = 4;
              size_t nelements = decompressSize/elementsize;
              PVUIntArray::svector xxx(nelements);
              PVUIntArray::const_svector destdata(freeze(xxx));
@@ -293,7 +293,7 @@ bool CodecBlosc::decompressBlosc(
     case pvLong:
         {
              PVLongArrayPtr pvDest = static_pointer_cast<PVLongArray>(pvDestination);
-             int elementsize = 1;
+             int elementsize = 8;
              size_t nelements = decompressSize/elementsize;
              PVLongArray::svector xxx(nelements);
              PVLongArray::const_svector destdata(freeze(xxx));
@@ -304,7 +304,7 @@ bool CodecBlosc::decompressBlosc(
     case pvULong:
         {
              PVULongArrayPtr pvDest = static_pointer_cast<PVULongArray>(pvDestination);
-             int elementsize = 1;
+             int elementsize = 8;
              size_t nelements = decompressSize/elementsize;
              PVULongArray::svector xxx(nelements);
              PVULongArray::const_svector destdata(freeze(xxx));
@@ -315,7 +315,7 @@ bool CodecBlosc::decompressBlosc(
     case pvFloat:
         {
              PVFloatArrayPtr pvDest = static_pointer_cast<PVFloatArray>(pvDestination);
-             int elementsize = 1;
+             int elementsize = 4;
              size_t nelements = decompressSize/elementsize;
              PVFloatArray::svector xxx(nelements);
              PVFloatArray::const_svector destdata(freeze(xxx));
@@ -326,7 +326,7 @@ bool CodecBlosc::decompressBlosc(
     case pvDouble:
         {
              PVDoubleArrayPtr pvDest = static_pointer_cast<PVDoubleArray>(pvDestination);
-             int elementsize = 1;
+             int elementsize = 8;
              size_t nelements = decompressSize/elementsize;
              PVDoubleArray::svector xxx(nelements);
              PVDoubleArray::const_svector destdata(freeze(xxx));

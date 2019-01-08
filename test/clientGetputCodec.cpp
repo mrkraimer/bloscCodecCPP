@@ -97,6 +97,13 @@ void ClientCodec::setChannelName(const string &channelName)
          cerr << "not connected to codecChannel\n";
          return;
     }
+    PvaClientPutPtr pvaClientPut(pvaClientChannel->put("field(channelName,command.index)"));
+    PvaClientPutDataPtr putData(pvaClientPut->getData());
+    PVStructurePtr pv(putData->getPVStructure());
+    pv->getSubField<PVInt>("command.index")->put(0);
+    pv->getSubField<PVString>("channelName")->put(channelName);
+    putData->getChangedBitSet()->set(0);
+    pvaClientPut->put();
 }
 
 void ClientCodec::get()
@@ -113,22 +120,30 @@ void ClientCodec::get()
 
 void ClientCodec::compress()
 {
-      PvaClientPutPtr pvaClientPut(pvaClientChannel->put("field(command.index)"));
-      PvaClientPutDataPtr putData(pvaClientPut->getData());
-      PVStructurePtr pv(putData->getPVStructure());
-      pv->getSubField<PVInt>("command.index")->put(1);
-      putData->getChangedBitSet()->set(0);
-      pvaClientPut->put();
+    if(!channelConnected) {
+         cerr << "not connected to codecChannel\n";
+         return;
+    }
+    PvaClientPutPtr pvaClientPut(pvaClientChannel->put("field(command.index)"));
+    PvaClientPutDataPtr putData(pvaClientPut->getData());
+    PVStructurePtr pv(putData->getPVStructure());
+    pv->getSubField<PVInt>("command.index")->put(1);
+    putData->getChangedBitSet()->set(0);
+    pvaClientPut->put();
 }
 
 void ClientCodec::decompress()
 {
-      PvaClientPutPtr pvaClientPut(pvaClientChannel->put("field(command.index)"));
-      PvaClientPutDataPtr putData(pvaClientPut->getData());
-      PVStructurePtr pv(putData->getPVStructure());
-      pv->getSubField<PVInt>("command.index")->put(2);
-      putData->getChangedBitSet()->set(0);
-      pvaClientPut->put();
+    if(!channelConnected) {
+         cerr << "not connected to codecChannel\n";
+         return;
+    }
+    PvaClientPutPtr pvaClientPut(pvaClientChannel->put("field(command.index)"));
+    PvaClientPutDataPtr putData(pvaClientPut->getData());
+    PVStructurePtr pv(putData->getPVStructure());
+    pv->getSubField<PVInt>("command.index")->put(2);
+    putData->getChangedBitSet()->set(0);
+    pvaClientPut->put();
 }
 
 
