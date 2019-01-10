@@ -111,6 +111,8 @@ bool CodecRecord::compressPVRecord()
          setAlarm(channelName + " no scalar array value",invalidAlarm,clientStatus);
         return false;
     }
+    ScalarType scalarType(pvScalarArray->getScalarArray()->getElementType());
+    pvStructure->getSubField<PVInt>("elementScalarType")->put(scalarType);
     string codecName = pvStructure->getSubField<PVString>("codecName")->get();
     if(codecName.compare("blosc")!=0) {
         setAlarm(codecName + " codec not supported",invalidAlarm,clientStatus);
@@ -181,32 +183,39 @@ bool CodecRecord::compressDBRecord()
         return true;
     }
     Type type = (dbChannelSpecial(pchan)==SPC_DBADDR) ? scalarArray : scalar;
-    if(type!=scalarArray) {
+    if(type!=scalarArray) { 
         setAlarm(channelName + " is not a scalarArray",invalidAlarm,clientStatus);
         return true;
     }
     int elementsize = 0;
+    ScalarType scalarType(pvByte);
+    pvStructure->getSubField<PVInt>("elementScalarType")->put(scalarType);
     switch (dbChannelFieldType(pchan)) {
     case DBF_CHAR:
+        elementsize = 1; scalarType = pvByte; break;
     case DBF_UCHAR:
-        elementsize = 1; break;
+        elementsize = 1; scalarType = pvUByte; break;
     case DBF_SHORT:
+        elementsize = 2; scalarType = pvShort; break;
     case DBF_USHORT:
-        elementsize = 2; break;
+        elementsize = 2; scalarType = pvUShort; break;
     case DBF_LONG:
+        elementsize = 4; scalarType = pvInt; break;
     case DBF_ULONG:
-        elementsize = 4; break;
+        elementsize = 4; scalarType = pvUInt; break;
     case DBF_INT64:
+        elementsize = 1; scalarType = pvLong; break;
     case DBF_UINT64:
-        elementsize = 4; break;
+        elementsize = 4; scalarType = pvULong; break;
     case DBF_FLOAT:
-        elementsize = 4; break;
+        elementsize = 4; scalarType = pvFloat; break;
     case DBF_DOUBLE:
-        elementsize = 8; break;
+        elementsize = 8; scalarType = pvDouble; break;
     default:
         setAlarm(channelName + " unsupported DBF_type",invalidAlarm,clientStatus);
         return true;
     }
+    pvStructure->getSubField<PVInt>("elementScalarType")->put(scalarType);
     struct dbCommon *precord = dbChannelRecord(pchan);
     dbScanLock(precord);
     long rec_length = 0;

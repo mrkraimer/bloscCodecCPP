@@ -47,9 +47,10 @@ StructureConstPtr CodecBlosc::createCodecStructure()
          add("alarm",standardField->alarm()) ->
          add("timeStamp",standardField->timeStamp()) -> 
          add("channelName",pvString)->
-         add("channelType",pvString)->
-         add("command",standardField->enumerated()) ->
          add("codecName",pvString)->
+         add("elementScalarType",pvInt)->
+         add("command",standardField->enumerated()) ->
+         add("monitor",standardField->enumerated()) ->
          add("bloscArgs",bloscArgs) ->
          createStructure();
     return topStructure;
@@ -380,6 +381,11 @@ void CodecBlosc::initCodecStructure(const PVStructurePtr & pvStructure)
     choices[2] = "put";
     choices[3] = "monitor";
     pvStructure->getSubField<PVStringArray>("command.choices")->replace(freeze(choices));
+    choices.resize(3);
+    choices[0] = "idle";
+    choices[1] = "start";
+    choices[2] = "stop";
+    pvStructure->getSubField<PVStringArray>("monitor.choices")->replace(freeze(choices));
     choices.resize(6);
     choices[0] = "blosclz";
     choices[1] = "lz4";
