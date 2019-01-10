@@ -10,6 +10,7 @@
 #ifndef CODEC_RECORD_H
 #define CODEC_RECORD_H
 
+
 #include <pv/timeStamp.h>
 #include <pv/pvTimeStamp.h>
 #include <pv/alarm.h>
@@ -43,15 +44,16 @@ private:
     CodecRecord(
         std::string const & recordName,
         epics::pvData::PVStructurePtr const & pvStructure);
-    void connect();
-    void disconnect();
     void setAlarm(
         std::string const & message,
         epics::pvData::AlarmSeverity severity,
         epics::pvData::AlarmStatus status);
+    bool compressPVRecord();
+    bool decompressPVRecord();
+    bool compressDBRecord();
+    bool decompressDBRecord();
 
     CodecBloscPtr codecBlosc;
-    bool connected;
     epics::pvData::PVStructurePtr pvStructure;
     epics::pvDatabase::PVRecordPtr pvRecord;
     epics::pvData::PVStringPtr pvChannelName;
@@ -62,7 +64,6 @@ private:
     epics::pvData::PVStructurePtr pvTimeStampField;
     epics::pvData::PVTimeStamp pvTimeStamp;
     epics::pvData::TimeStamp timeStamp;
-    epics::pvData::PVScalarArrayPtr pvScalarArray;
 };
 
 }}

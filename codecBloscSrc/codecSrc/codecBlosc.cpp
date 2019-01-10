@@ -180,11 +180,19 @@ bool CodecBlosc::compressBlosc(
         message = mess;
         return false;
     }
+    return compressBlosc(pvDest,decompressAddr,decompressSize,pvBloscArgs);
+    
+}
+
+bool CodecBlosc::compressBlosc(
+        const PVUByteArrayPtr & pvDest,
+        const void * decompressAddr, size_t decompressSize,
+        const PVStructurePtr & pvBloscArgs)
+{
     int clevel = pvBloscArgs->getSubField<PVInt>("level")->get();
     int doshuffle = pvBloscArgs->getSubField<PVInt>("shuffle.index")->get();
     size_t typesize = 1;
     size_t nbytes = decompressSize;
-    const void* src = (const void *)decompressAddr;
     size_t destsize = nbytes + BLOSC_MAX_OVERHEAD;
     PVUByteArray::svector destdata(destsize); 
     void *dest = (void *)destdata.data();
@@ -197,10 +205,9 @@ bool CodecBlosc::compressBlosc(
     const char* compressor = choice.c_str();
     size_t blocksize = 0;
     int numinternalthreads = 1;
-
     int result = blosc_compress_ctx(
         clevel,doshuffle,typesize,
-        nbytes,src,dest,
+        nbytes,decompressAddr,dest,
         destsize,compressor,
         blocksize,numinternalthreads);
     if(result>0) {
@@ -337,6 +344,14 @@ bool CodecBlosc::decompressBlosc(
     default:
         return false;
     }
+    return decompressBlosc(pvSource,decompressAddr,decompressSize,pvBloscArgs);
+}
+
+bool CodecBlosc::decompressBlosc(
+        const epics::pvData::PVUByteArrayPtr & pvSource,
+        void * decompressAddr, size_t decompressSize,
+        const epics::pvData::PVStructurePtr & pvBloscArgs)
+{
     PVUByteArray::const_svector sourcedata;
     pvSource->getAs(sourcedata);   
     void *src = (void *)sourcedata.data();
