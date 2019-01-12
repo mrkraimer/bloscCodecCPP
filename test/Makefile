@@ -11,6 +11,10 @@ PROD_HOST += clientGetputCodec
 clientGetputCodec_SRCS += clientGetputCodec.cpp
 clientGetputCodec_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
 
+PROD_HOST += clientMonitorCodec
+clientMonitorCodec_SRCS += clientMonitorCodec.cpp
+clientMonitorCodec_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
+
 
 PROD_SYS_LIBS_WIN32 += ws2_32
 

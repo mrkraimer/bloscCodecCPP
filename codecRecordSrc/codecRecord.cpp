@@ -13,11 +13,14 @@
 #include <dbStaticLib.h>
 #include <dbNotify.h>
 #include <special.h>
+#include <epicsThread.h>
+#include <pv/event.h>
+#include <pv/timeStamp.h>
 #include <pv/standardPVField.h>
 #include <pv/ntscalar.h>
 #include <pv/ntenum.h>
-
 #include <pv/pvDatabase.h>
+#include <pv/pvStructureCopy.h>
 #include <pv/codecBlosc.h>
 
 #include <epicsExport.h>
@@ -26,6 +29,7 @@
 using namespace epics::pvData;
 using namespace epics::pvAccess;
 using namespace epics::pvDatabase;
+using namespace epics::pvCopy;
 using namespace epics::nt;
 using std::tr1::static_pointer_cast;
 using std::tr1::dynamic_pointer_cast;
@@ -66,10 +70,18 @@ CodecRecord::CodecRecord(
     PVStructurePtr const & pvStructure)
 : PVRecord(recordName,pvStructure),
   codecBlosc(CodecBlosc::create()),
-  pvStructure(pvStructure)
+  pvStructure(pvStructure),
+  monitorStarted(false)
 {
 }
 
+CodecRecord::~CodecRecord()
+{
+    if(!monitorStarted) return;
+    stopThread = true;
+    monitorEvent.signal();
+    runReturn.wait();
+}
 
 bool CodecRecord::init()
 {
@@ -352,13 +364,106 @@ void CodecRecord::process()
           if(decompressDBRecord()) break;
           setAlarm(channelName +" does not exist",noAlarm,clientStatus);
           break;
-    case 3: // monitor
-          setAlarm("monitor is not implemented",invalidAlarm,clientStatus);
+    case 3: // startMonitor
+          startMonitor();
+          break;
+    case 4: // stopMonitor
+          stopMonitor();
           break;
     default:
           setAlarm("illegal command",invalidAlarm,clientStatus);
     }
     PVRecord::process();
+}
+
+class MyListener;
+typedef std::tr1::shared_ptr<MyListener> MyListenerPtr;
+typedef std::tr1::weak_ptr<MyListener> MyListenerWPtr;
+
+class MyListener :
+    public PVListener,
+    public std::tr1::enable_shared_from_this<MyListener>
+{
+public:
+    POINTER_DEFINITIONS(MyListener);
+    virtual void detach(PVRecordPtr const & pvRecord) {}
+    virtual void unlisten(PVRecordPtr const & pvRecord) {}
+    virtual void dataPut(PVRecordFieldPtr const & pvRecordField){}
+    virtual void dataPut(
+        PVRecordStructurePtr const & requested,
+        PVRecordFieldPtr const & pvRecordField) {}
+    virtual void beginGroupPut(PVRecordPtr const & pvRecord) {}
+    virtual void endGroupPut(PVRecordPtr const & pvRecord);
+    static MyListenerPtr create(Event * event);
+private:
+    Event* monitorEvent;
+    MyListener(Event * event)
+    : monitorEvent(event)
+    {}
+};
+
+MyListenerPtr MyListener::create(Event * event)
+{
+    MyListenerPtr myListener(new MyListener(event));
+    return myListener;
+}
+
+void MyListener::endGroupPut(PVRecordPtr const & pvRecord)
+{
+     monitorEvent->signal();
+}
+
+void CodecRecord::run()
+{
+   PVDatabasePtr pvDatabase(PVDatabase::getMaster());
+   PVRecordPtr pvRecord(pvDatabase->findRecord(monitorChannelName));
+   PVStructurePtr pvTop = pvRecord->getPVRecordStructure()->getPVStructure();
+   string request("field(value[array=0:1])");
+   PVStructurePtr pvRequest(CreateRequest::create()->createRequest(request));
+   PVCopyPtr pvCopy = PVCopy::create(pvTop,pvRequest,"");
+   MyListenerPtr listener(MyListener::create(&monitorEvent));
+   pvRecord->addListener(listener,pvCopy);
+   while(true) {
+       monitorEvent.wait();
+cout << "CodecRecord::run() event stopThread " << (stopThread ? "true" : "false") << "\n";
+       if(stopThread) {
+           runReturn.signal();
+           return;
+       }    
+   }
+}
+
+void CodecRecord::startMonitor()
+{
+    if(monitorStarted) {
+       setAlarm("monitor is already started",noAlarm,clientStatus);
+       return;
+    }
+    string channelName(pvChannelName->get());
+    PVDatabasePtr pvDatabase(PVDatabase::getMaster());
+    PVRecordPtr pvRecord(pvDatabase->findRecord(channelName));
+    if(!pvRecord) {
+       setAlarm(channelName +" is not found",noAlarm,clientStatus);
+       return;
+    }
+    PVScalarArrayPtr pvScalarArray = 
+              pvRecord->getPVStructure()->getSubField<PVScalarArray>("value");
+    if(!pvScalarArray) {
+         setAlarm(channelName + " no scalar array value",invalidAlarm,clientStatus);
+        return;
+    }
+    monitorChannelName = channelName;
+    monitorStarted = true;
+    thread =  std::auto_ptr<epicsThread>(new epicsThread(
+        *this,
+        "codecRecord",
+        epicsThreadGetStackSize(epicsThreadStackSmall),
+        epicsThreadPriorityLow));
+    thread->start();
+}
+
+void CodecRecord::stopMonitor()
+{
 }
 
 }}

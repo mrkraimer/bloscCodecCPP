@@ -10,12 +10,15 @@
 #ifndef CODEC_RECORD_H
 #define CODEC_RECORD_H
 
-
+#include <epicsThread.h>
+#include <pv/event.h>
 #include <pv/timeStamp.h>
 #include <pv/pvTimeStamp.h>
 #include <pv/alarm.h>
 #include <pv/pvAlarm.h>
 #include <pv/pvDatabase.h>
+#include <pv/pvStructureCopy.h>
+
 #include <pv/codecBlosc.h>
 
 #include <shareLib.h>
@@ -27,19 +30,22 @@ typedef std::tr1::shared_ptr<CodecRecord> CodecRecordPtr;
 typedef std::tr1::weak_ptr<CodecRecord> CodecRecordWPtr;
 
 class epicsShareClass CodecRecord :
-    public epics::pvDatabase::PVRecord
+    public epics::pvDatabase::PVRecord,
+    public epicsThreadRunable
 {
 public:
-    POINTER_DEFINITIONS(CodecRecord);
     static CodecRecordPtr create(
         std::string const & recordName,
         std::string const & channelName,
         std::string const & codecName
         );
-    virtual ~CodecRecord() {}
+    virtual ~CodecRecord();
     virtual void process();
+    virtual void run();
 
     bool init();
+
+    
 private:
     CodecRecord(
         std::string const & recordName,
@@ -52,6 +58,9 @@ private:
     bool decompressPVRecord();
     bool compressDBRecord();
     bool decompressDBRecord();
+    void startMonitor();
+    void stopMonitor();
+    
 
     CodecBloscPtr codecBlosc;
     epics::pvData::PVStructurePtr pvStructure;
@@ -64,6 +73,13 @@ private:
     epics::pvData::PVStructurePtr pvTimeStampField;
     epics::pvData::PVTimeStamp pvTimeStamp;
     epics::pvData::TimeStamp timeStamp;
+
+    bool monitorStarted;
+    bool stopThread;
+    std::string monitorChannelName;
+    std::auto_ptr<epicsThread> thread;
+    epics::pvData::Event monitorEvent ;
+    epics::pvData::Event runReturn;
 };
 
 }}
