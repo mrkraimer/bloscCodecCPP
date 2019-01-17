@@ -10,8 +10,8 @@
 
 #include <dbAccess.h>
 #include <dbChannel.h>
+#include <dbEvent.h>
 #include <dbStaticLib.h>
-#include <dbNotify.h>
 #include <special.h>
 #include <epicsThread.h>
 #include <pv/event.h>
@@ -71,7 +71,8 @@ CodecRecord::CodecRecord(
 : PVRecord(recordName,pvStructure),
   codecBlosc(CodecBlosc::create()),
   pvStructure(pvStructure),
-  monitorStarted(false)
+  monitorStarted(false),
+  monitorIsPVRecord(false)
 {
 }
 
@@ -216,9 +217,9 @@ bool CodecRecord::compressDBRecord()
     case DBF_ULONG:
         elementsize = 4; scalarType = pvUInt; break;
     case DBF_INT64:
-        elementsize = 1; scalarType = pvLong; break;
+        elementsize = 8; scalarType = pvLong; break;
     case DBF_UINT64:
-        elementsize = 4; scalarType = pvULong; break;
+        elementsize = 8; scalarType = pvULong; break;
     case DBF_FLOAT:
         elementsize = 4; scalarType = pvFloat; break;
     case DBF_DOUBLE:
@@ -301,7 +302,7 @@ bool CodecRecord::decompressDBRecord()
         elementsize = 4; break;
     case DBF_INT64:
     case DBF_UINT64:
-        elementsize = 4; break;
+        elementsize = 8; break;
     case DBF_FLOAT:
         elementsize = 4; break;
     case DBF_DOUBLE:
@@ -413,24 +414,88 @@ void MyListener::endGroupPut(PVRecordPtr const & pvRecord)
      monitorEvent->signal();
 }
 
+
+static void pdb_single_event(void *user_arg, struct dbChannel *chan,
+                      int eventsRemaining, struct db_field_log *pfl)
+{
+    CodecRecord *codecRecord = static_cast<CodecRecord *>(user_arg);
+    codecRecord->monitorEvent.signal();
+}
+
+
 void CodecRecord::run()
 {
-   PVDatabasePtr pvDatabase(PVDatabase::getMaster());
-   PVRecordPtr pvRecord(pvDatabase->findRecord(monitorChannelName));
-   PVStructurePtr pvTop = pvRecord->getPVRecordStructure()->getPVStructure();
-   string request("field(value[array=0:1])");
-   PVStructurePtr pvRequest(CreateRequest::create()->createRequest(request));
-   PVCopyPtr pvCopy = PVCopy::create(pvTop,pvRequest,"");
-   MyListenerPtr listener(MyListener::create(&monitorEvent));
-   pvRecord->addListener(listener,pvCopy);
+   static bool firstTime(true);
+   static dbEventCtx event_context(NULL);
+   if(firstTime) {
+        firstTime = false;
+        event_context = db_init_events();
+        if(!event_context) {
+            throw std::runtime_error("Failed to create dbEvent context");
+        }
+        int ret = db_start_events(event_context,
+            "codecRecordMonitor", NULL, NULL, epicsThreadPriorityCAServerLow);
+        if(ret!=DB_EVENT_OK) {
+            throw std::runtime_error("Failed to start dbEvent context");
+        }
+   }
+   PVRecordPtr pvRecord;
+   PVCopyPtr pvCopy;
+   MyListenerPtr listener;
+   dbChannel *chan = NULL;
+   dbEventCtx eventContext = NULL;
+   dbEventSubscription subscript = NULL;
+   if(monitorIsPVRecord) {
+       PVDatabasePtr pvDatabase(PVDatabase::getMaster());
+       pvRecord = pvDatabase->findRecord(monitorChannelName);
+       PVStructurePtr pvTop = pvRecord->getPVRecordStructure()->getPVStructure();
+       string request("field(value[array=0:1])");
+       PVStructurePtr pvRequest(CreateRequest::create()->createRequest(request));
+       pvCopy = PVCopy::create(pvTop,pvRequest,"");
+       listener = MyListener::create(&monitorEvent);
+       pvRecord->addListener(listener,pvCopy);
+   } else {
+       chan = dbChannelCreate(monitorChannelName.c_str());
+       if(!chan) {
+           throw std::runtime_error(monitorChannelName + " not found");
+       }
+       eventContext = db_init_events();
+       subscript = db_add_event(
+            eventContext,chan,&pdb_single_event, this, DBE_VALUE
+);
+       if(!subscript) {
+           throw std::runtime_error(monitorChannelName +" db_add_event failed");
+       }
+       int ret = db_start_events(
+           eventContext, "codecRecordMonitor", NULL, NULL,
+           epicsThreadPriorityCAServerLow);
+       db_post_single_event(subscript);
+       db_event_enable(subscript);
+   }
    while(true) {
        monitorEvent.wait();
-cout << "CodecRecord::run() event stopThread " << (stopThread ? "true" : "false") << "\n";
        if(stopThread) {
            runReturn.signal();
            return;
-       }    
+       }
+       lock();
+       try {
+           beginGroupPut();
+           pvStructure->getSubField<PVInt>("command.index")->put(1);
+           pvStructure->getSubField<PVString>("channelName")->put(monitorChannelName);
+           process();
+           endGroupPut();
+        } catch(...) {
+             setAlarm("compressBlosc exception",invalidAlarm,clientStatus);
+        }
+        unlock();
    }
+   if(monitorIsPVRecord) {
+       pvRecord->removeListener(listener,pvCopy);
+   } else {
+       db_cancel_event(subscript);
+   }
+   runReturn.signal();
 }
 
 void CodecRecord::startMonitor()
@@ -442,15 +507,15 @@ void CodecRecord::startMonitor()
     string channelName(pvChannelName->get());
     PVDatabasePtr pvDatabase(PVDatabase::getMaster());
     PVRecordPtr pvRecord(pvDatabase->findRecord(channelName));
-    if(!pvRecord) {
-       setAlarm(channelName +" is not found",noAlarm,clientStatus);
-       return;
-    }
-    PVScalarArrayPtr pvScalarArray = 
-              pvRecord->getPVStructure()->getSubField<PVScalarArray>("value");
-    if(!pvScalarArray) {
-         setAlarm(channelName + " no scalar array value",invalidAlarm,clientStatus);
-        return;
+    if(pvRecord) {
+        monitorIsPVRecord = true;
+    } else {
+       dbChannel *pchan = dbChannelCreate(channelName.c_str());
+       if(pchan==NULL) {
+           setAlarm(channelName +" is not found",noAlarm,clientStatus);
+           return;
+       }
+       monitorIsPVRecord = false;
     }
     monitorChannelName = channelName;
     monitorStarted = true;
@@ -464,6 +529,11 @@ void CodecRecord::startMonitor()
 
 void CodecRecord::stopMonitor()
 {
+    stopThread = true;
+    monitorEvent.signal();
+    runReturn.wait();
+    stopThread = false;
+    monitorStarted = false;
 }
 
 }}

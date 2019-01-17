@@ -77,8 +77,11 @@ private:
     bool monitorStarted;
     bool stopThread;
     std::string monitorChannelName;
+    bool monitorIsPVRecord;
     std::auto_ptr<epicsThread> thread;
+public:
     epics::pvData::Event monitorEvent ;
+private:
     epics::pvData::Event runReturn;
 };
 
