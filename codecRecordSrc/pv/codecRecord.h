@@ -4,8 +4,8 @@
  */
 
 /**
- * @author mrk
- * @date 2016.06.17
+ * @author Marty Kraimer
+ * @date 2019.01
  */
 #ifndef CODEC_RECORD_H
 #define CODEC_RECORD_H
@@ -29,23 +29,45 @@ class CodecRecord;
 typedef std::tr1::shared_ptr<CodecRecord> CodecRecordPtr;
 typedef std::tr1::weak_ptr<CodecRecord> CodecRecordWPtr;
 
+/**
+ * @brief A PVRecord that implements blosc compress/decompress.
+ *
+ *
+ */
 class epicsShareClass CodecRecord :
     public epics::pvDatabase::PVRecord,
     public epicsThreadRunable
 {
 public:
+    POINTER_DEFINITIONS(CodecRecord);
+    /**
+     * @brief Factory method to create CodecRecord.
+     *
+     * @param recordName The name for the CodecRecord.
+     * @param channelName Initial name of record to compress/decompress.
+     * @param codecName The initial value for the name of the codec.
+     * @return A shared pointer to CodecRecord,
+     */
     static CodecRecordPtr create(
         std::string const & recordName,
         std::string const & channelName,
         std::string const & codecName
         );
     virtual ~CodecRecord();
+    /**
+     * @brief perform requested command.
+     */
     virtual void process();
+    /**
+     * @brief run method of thread that implements monitor.
+     */
     virtual void run();
-
+    /**
+     * @brief p standard init method required by PVRecord
+     *
+     * @return true unless record name already exists.
+     */
     bool init();
-
-    
 private:
     CodecRecord(
         std::string const & recordName,

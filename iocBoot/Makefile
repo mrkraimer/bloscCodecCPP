@@ -1,5 +1,5 @@
 TOP = ..
 include $(TOP)/configure/CONFIG
-DIRS += $(wildcard example*)
+DIRS += codecIoc
 include $(CONFIG)/RULES_DIRS
 

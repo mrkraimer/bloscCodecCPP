@@ -4,8 +4,8 @@
  */
 
 /**
- * @author mrk
- * @date 2016.06.17
+ * @author Marty Kraimer
+ * @date 2019.01
  */
 #ifndef CODEC_BLOSC_H
 #define CODEC_BLOSC_H
@@ -27,7 +27,10 @@ namespace epics { namespace codec {
 class CodecBlosc;
 typedef std::tr1::shared_ptr<CodecBlosc> CodecBloscPtr;
 typedef std::tr1::weak_ptr<CodecBlosc> CodecBloscWPtr;
-
+/**
+ * @brief Code that implements blosc compress/decompress.
+ *
+ */
 class epicsShareClass CodecBlosc
 {
 public:

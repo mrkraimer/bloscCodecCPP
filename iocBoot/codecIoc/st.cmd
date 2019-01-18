@@ -3,8 +3,8 @@
 cd ${TOP}
 
 ## Register all support components
-dbLoadDatabase("dbd/codec.dbd")
-codec_registerRecordDeviceDriver(pdbbase)
+dbLoadDatabase("dbd/codecIoc.dbd")
+codecIoc_registerRecordDeviceDriver(pdbbase)
 
 ## Load record instance
 dbLoadRecords("db/dbArray.db","name=DBRint8Array,nelem=500,type=CHAR");
