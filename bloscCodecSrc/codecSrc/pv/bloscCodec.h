@@ -7,8 +7,8 @@
  * @author Marty Kraimer
  * @date 2019.01
  */
-#ifndef CODEC_BLOSC_H
-#define CODEC_BLOSC_H
+#ifndef BLOSC_CODEC_H
+#define BLOSC_CODEC_H
 
 #include <blosc.h>
 #include <pv/timeStamp.h>
@@ -24,22 +24,22 @@
 
 namespace epics { namespace codec {
 
-class CodecBlosc;
-typedef std::tr1::shared_ptr<CodecBlosc> CodecBloscPtr;
-typedef std::tr1::weak_ptr<CodecBlosc> CodecBloscWPtr;
+class BloscCodec;
+typedef std::tr1::shared_ptr<BloscCodec> BloscCodecPtr;
+typedef std::tr1::weak_ptr<BloscCodec> BloscCodecWPtr;
 /**
  * @brief Code that implements blosc compress/decompress.
  *
  */
-class epicsShareClass CodecBlosc
+class epicsShareClass BloscCodec
 {
 public:
-    POINTER_DEFINITIONS(CodecBlosc);
-    static CodecBloscPtr create();
-    virtual ~CodecBlosc() {}
+    POINTER_DEFINITIONS(BloscCodec);
+    static BloscCodecPtr create();
+    virtual ~BloscCodec() {}
 
 private:
-    CodecBlosc();
+    BloscCodec();
     std::string message;
     static epics::pvData::StructureConstPtr codecStructure;
     static epics::pvData::StructureConstPtr createCodecStructure();
@@ -68,4 +68,4 @@ public:
 
 }}
 
-#endif  /* CODEC_BLOSC_H */
+#endif  /* BLOSC_CODEC_H */

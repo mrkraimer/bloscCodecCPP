@@ -21,10 +21,10 @@
 #include <pv/ntenum.h>
 #include <pv/pvDatabase.h>
 #include <pv/pvStructureCopy.h>
-#include <pv/codecBlosc.h>
+#include <pv/bloscCodec.h>
 
 #include <epicsExport.h>
-#include <pv/codecRecord.h>
+#include <pv/bloscCodecRecord.h>
 
 using namespace epics::pvData;
 using namespace epics::pvAccess;
@@ -44,7 +44,7 @@ typedef long (*put_array_info) (void *,long);
 }
 
 
-CodecRecordPtr CodecRecord::create(
+BloscCodecRecordPtr BloscCodecRecord::create(
     string const & recordName,
     string const & channelName,
     string const & codecName)
@@ -54,29 +54,29 @@ CodecRecordPtr CodecRecord::create(
     PVDataCreatePtr pvDataCreate = getPVDataCreate();
 
 
-    StructureConstPtr  topStructure = CodecBlosc::getCodecStructure();
+    StructureConstPtr  topStructure = BloscCodec::getCodecStructure();
     PVStructurePtr pvStructure = pvDataCreate->createPVStructure(topStructure);
     pvStructure->getSubField<PVString>("channelName")->put(channelName);
    
     pvStructure->getSubField<PVString>("codecName")->put(codecName);
-    CodecRecordPtr pvRecord(
-        new CodecRecord(recordName,pvStructure)); 
+    BloscCodecRecordPtr pvRecord(
+        new BloscCodecRecord(recordName,pvStructure)); 
     if(!pvRecord->init()) pvRecord.reset();
     return pvRecord;
 }
 
-CodecRecord::CodecRecord(
+BloscCodecRecord::BloscCodecRecord(
     string const & recordName,
     PVStructurePtr const & pvStructure)
 : PVRecord(recordName,pvStructure),
-  codecBlosc(CodecBlosc::create()),
+  bloscCodec(BloscCodec::create()),
   pvStructure(pvStructure),
   monitorStarted(false),
   monitorIsPVRecord(false)
 {
 }
 
-CodecRecord::~CodecRecord()
+BloscCodecRecord::~BloscCodecRecord()
 {
     if(!monitorStarted) return;
     stopThread = true;
@@ -84,10 +84,10 @@ CodecRecord::~CodecRecord()
     runReturn.wait();
 }
 
-bool CodecRecord::init()
+bool BloscCodecRecord::init()
 {
     initPVRecord();
-    codecBlosc->initCodecStructure(pvStructure);
+    bloscCodec->initCodecStructure(pvStructure);
     PVStructurePtr pvStructure = getPVRecordStructure()->getPVStructure();
     pvValue = pvStructure->getSubField<PVUByteArray>("value");
     if(!pvValue) {
@@ -112,7 +112,7 @@ bool CodecRecord::init()
     return true;
 }
 
-bool CodecRecord::compressPVRecord()
+bool BloscCodecRecord::compressPVRecord()
 {
     string channelName(pvChannelName->get());
     PVDatabasePtr pvDatabase(PVDatabase::getMaster());
@@ -133,7 +133,7 @@ bool CodecRecord::compressPVRecord()
     }
     pvRecord->lock();
     try {
-        bool result = codecBlosc->compressBlosc(
+        bool result = bloscCodec->compressBlosc(
             pvStructure->getSubField<PVUByteArray>("value"),
             pvScalarArray,
             pvStructure->getSubField<PVStructure>("bloscArgs")); 
@@ -149,7 +149,7 @@ bool CodecRecord::compressPVRecord()
     return true;
 }
 
-bool CodecRecord::decompressPVRecord()
+bool BloscCodecRecord::decompressPVRecord()
 {
     string channelName(pvChannelName->get());
     PVDatabasePtr pvDatabase(PVDatabase::getMaster());
@@ -168,7 +168,7 @@ bool CodecRecord::decompressPVRecord()
     }
     pvRecord->lock();
     try {
-        bool result = codecBlosc->decompressBlosc(
+        bool result = bloscCodec->decompressBlosc(
             pvStructure->getSubField<PVUByteArray>("value"),
             pvScalarArray,
             pvStructure->getSubField<PVStructure>("bloscArgs")); 
@@ -185,7 +185,7 @@ bool CodecRecord::decompressPVRecord()
 }
 
 
-bool CodecRecord::compressDBRecord()
+bool BloscCodecRecord::compressDBRecord()
 {
     string channelName(pvChannelName->get());
     dbChannel *pchan = dbChannelCreate(channelName.c_str());
@@ -251,7 +251,7 @@ bool CodecRecord::compressDBRecord()
         dbScanUnlock(precord);
         return false;
     }
-    bool result = codecBlosc->compressBlosc(
+    bool result = bloscCodec->compressBlosc(
         pvStructure->getSubField<PVUByteArray>("value"),
         decompressAddr,decompressSize,
         pvStructure->getSubField<PVStructure>("bloscArgs")); 
@@ -264,7 +264,7 @@ bool CodecRecord::compressDBRecord()
     return true;
 }
 
-bool CodecRecord::decompressDBRecord()
+bool BloscCodecRecord::decompressDBRecord()
 {
     string channelName(pvChannelName->get());
     dbChannel *pchan = dbChannelCreate(channelName.c_str());
@@ -322,7 +322,7 @@ bool CodecRecord::decompressDBRecord()
     }
     struct dbCommon *precord = dbChannelRecord(pchan);
     dbScanLock(precord);
-    bool result = codecBlosc->decompressBlosc(
+    bool result = bloscCodec->decompressBlosc(
         pvStructure->getSubField<PVUByteArray>("value"),
         decompressAddr,decompressSize,
         pvStructure->getSubField<PVStructure>("bloscArgs")); 
@@ -340,7 +340,7 @@ bool CodecRecord::decompressDBRecord()
     return true;
 }
 
-void CodecRecord::setAlarm(string const & message,AlarmSeverity severity,AlarmStatus status)
+void BloscCodecRecord::setAlarm(string const & message,AlarmSeverity severity,AlarmStatus status)
 {
     alarm.setMessage(message);
     alarm.setSeverity(severity);
@@ -348,7 +348,7 @@ void CodecRecord::setAlarm(string const & message,AlarmSeverity severity,AlarmSt
     pvAlarm.set(alarm);
 }
 
-void CodecRecord::process()
+void BloscCodecRecord::process()
 {
     int command = pvStructure->getSubField<PVInt>("command.index")->get();
     string channelName(pvChannelName->get());
@@ -418,12 +418,12 @@ void MyListener::endGroupPut(PVRecordPtr const & pvRecord)
 static void pdb_single_event(void *user_arg, struct dbChannel *chan,
                       int eventsRemaining, struct db_field_log *pfl)
 {
-    CodecRecord *codecRecord = static_cast<CodecRecord *>(user_arg);
-    codecRecord->monitorEvent.signal();
+    BloscCodecRecord *bloscCodecRecord = static_cast<BloscCodecRecord *>(user_arg);
+    bloscCodecRecord->monitorEvent.signal();
 }
 
 
-void CodecRecord::run()
+void BloscCodecRecord::run()
 {
    static bool firstTime(true);
    static dbEventCtx event_context(NULL);
@@ -434,7 +434,7 @@ void CodecRecord::run()
             throw std::runtime_error("Failed to create dbEvent context");
         }
         int ret = db_start_events(event_context,
-            "codecRecordMonitor", NULL, NULL, epicsThreadPriorityCAServerLow);
+            "bloscCodecRecordMonitor", NULL, NULL, epicsThreadPriorityCAServerLow);
         if(ret!=DB_EVENT_OK) {
             throw std::runtime_error("Failed to start dbEvent context");
         }
@@ -467,7 +467,7 @@ void CodecRecord::run()
            throw std::runtime_error(monitorChannelName +" db_add_event failed");
        }
        int ret = db_start_events(
-           eventContext, "codecRecordMonitor", NULL, NULL,
+           eventContext, "bloscCodecRecordMonitor", NULL, NULL,
            epicsThreadPriorityCAServerLow);
        db_post_single_event(subscript);
        db_event_enable(subscript);
@@ -498,7 +498,7 @@ void CodecRecord::run()
    runReturn.signal();
 }
 
-void CodecRecord::startMonitor()
+void BloscCodecRecord::startMonitor()
 {
     if(monitorStarted) {
        setAlarm("monitor is already started",noAlarm,clientStatus);
@@ -521,13 +521,13 @@ void CodecRecord::startMonitor()
     monitorStarted = true;
     thread =  std::auto_ptr<epicsThread>(new epicsThread(
         *this,
-        "codecRecord",
+        "bloscCodecRecord",
         epicsThreadGetStackSize(epicsThreadStackSmall),
         epicsThreadPriorityLow));
     thread->start();
 }
 
-void CodecRecord::stopMonitor()
+void BloscCodecRecord::stopMonitor()
 {
     stopThread = true;
     monitorEvent.signal();

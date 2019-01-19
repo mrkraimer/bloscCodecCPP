@@ -4,7 +4,7 @@ include $(TOP)/configure/CONFIG
 
 LIBRARY = blosc
 
-LIBBLOSC = $(TOP)/codecBloscSrc
+LIBBLOSC = $(TOP)/bloscCodecSrc
 
 USR_CFLAGS += -DHAVE_ZSTD
 USR_CFLAGS += -DHAVE_SNAPPY
@@ -95,9 +95,9 @@ LIBSRCS += bitshuffle-sse2.c
 LIBSRCS += fastcopy.c
 
 SRC_DIRS += $(LIBBLOSC)/codecSrc
-INC += pv/codecBlosc.h
+INC += pv/bloscCodec.h
 
-LIBSRCS += codecBlosc.cpp
+LIBSRCS += bloscCodec.cpp
 
 
 #===========================

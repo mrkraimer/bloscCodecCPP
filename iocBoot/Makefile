@@ -1,5 +1,5 @@
 TOP = ..
 include $(TOP)/configure/CONFIG
-DIRS += codecIoc
+DIRS += bloscCodecIoc
 include $(CONFIG)/RULES_DIRS
 

@@ -18,7 +18,7 @@
 
 #include <shareLib.h>
 #include <epicsExport.h>
-#include <pv/codecBlosc.h>
+#include <pv/bloscCodec.h>
 
 namespace epics { namespace codec {
 
@@ -26,9 +26,9 @@ using namespace epics::pvData;
 using namespace std;
 using std::tr1::static_pointer_cast;
 
-StructureConstPtr CodecBlosc::codecStructure = CodecBlosc::createCodecStructure();
+StructureConstPtr BloscCodec::codecStructure = BloscCodec::createCodecStructure();
 
-StructureConstPtr CodecBlosc::createCodecStructure()
+StructureConstPtr BloscCodec::createCodecStructure()
 {
  FieldCreatePtr fieldCreate = getFieldCreate();
     StandardFieldPtr standardField = getStandardField();
@@ -55,14 +55,14 @@ StructureConstPtr CodecBlosc::createCodecStructure()
     return topStructure;
 }
 
-CodecBloscPtr CodecBlosc::create()
+BloscCodecPtr BloscCodec::create()
 {
-    CodecBloscPtr codecBlosc(new CodecBlosc());
-    return codecBlosc;
+    BloscCodecPtr bloscCodec(new BloscCodec());
+    return bloscCodec;
 }
-CodecBlosc::CodecBlosc(){}
+BloscCodec::BloscCodec(){}
 
-bool CodecBlosc::compressBlosc(
+bool BloscCodec::compressBlosc(
         const PVUByteArrayPtr & pvDest,
         const PVScalarArrayPtr & pvSource,
         const PVStructurePtr & pvBloscArgs)
@@ -174,7 +174,7 @@ bool CodecBlosc::compressBlosc(
         }
         break;
     default:
-        string mess("CodecBlosc::setBloscArgs pvType ");
+        string mess("BloscCodec::setBloscArgs pvType ");
         mess += scalarType;
         mess += " not supported";
         message = mess;
@@ -184,7 +184,7 @@ bool CodecBlosc::compressBlosc(
     
 }
 
-bool CodecBlosc::compressBlosc(
+bool BloscCodec::compressBlosc(
         const PVUByteArrayPtr & pvDest,
         const void * decompressAddr, size_t decompressSize,
         const PVStructurePtr & pvBloscArgs)
@@ -220,7 +220,7 @@ bool CodecBlosc::compressBlosc(
     return false;
 }
 
-bool CodecBlosc::decompressBlosc(
+bool BloscCodec::decompressBlosc(
     const epics::pvData::PVUByteArrayPtr & pvSource,
     const epics::pvData::PVScalarArrayPtr & pvDestination,
     const epics::pvData::PVStructurePtr & pvBloscArgs)
@@ -347,7 +347,7 @@ bool CodecBlosc::decompressBlosc(
     return decompressBlosc(pvSource,decompressAddr,decompressSize,pvBloscArgs);
 }
 
-bool CodecBlosc::decompressBlosc(
+bool BloscCodec::decompressBlosc(
         const epics::pvData::PVUByteArrayPtr & pvSource,
         void * decompressAddr, size_t decompressSize,
         const epics::pvData::PVStructurePtr & pvBloscArgs)
@@ -365,14 +365,14 @@ bool CodecBlosc::decompressBlosc(
     return true;
 }
 
-std::string CodecBlosc::getMessage() { return message;}
+std::string BloscCodec::getMessage() { return message;}
 
-StructureConstPtr CodecBlosc::getCodecStructure()
+StructureConstPtr BloscCodec::getCodecStructure()
 {
-    return CodecBlosc::codecStructure;
+    return BloscCodec::codecStructure;
 }
 
-void CodecBlosc::initCodecStructure(const PVStructurePtr & pvStructure)
+void BloscCodec::initCodecStructure(const PVStructurePtr & pvStructure)
 {
     PVStringArray::svector choices(6);
     choices[0] = "idle";

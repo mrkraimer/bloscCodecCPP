@@ -150,7 +150,7 @@ void ClientCodec::decompress()
 int main(int argc,char *argv[])
 {
     string argString("");
-    string codecChannelName("codecRecord");
+    string codecChannelName("bloscCodecRecord");
     string channelName("PVRdoubleArray");
     bool debug(false);
     int opt;

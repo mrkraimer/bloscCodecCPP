@@ -7,8 +7,8 @@
  * @author Marty Kraimer
  * @date 2019.01
  */
-#ifndef CODEC_RECORD_H
-#define CODEC_RECORD_H
+#ifndef BLOSC_CODEC_RECORD_H
+#define BLOSC_CODEC_RECORD_H
 
 #include <epicsThread.h>
 #include <pv/event.h>
@@ -19,41 +19,41 @@
 #include <pv/pvDatabase.h>
 #include <pv/pvStructureCopy.h>
 
-#include <pv/codecBlosc.h>
+#include <pv/bloscCodec.h>
 
 #include <shareLib.h>
 
 namespace epics { namespace codec {
 
-class CodecRecord;
-typedef std::tr1::shared_ptr<CodecRecord> CodecRecordPtr;
-typedef std::tr1::weak_ptr<CodecRecord> CodecRecordWPtr;
+class BloscCodecRecord;
+typedef std::tr1::shared_ptr<BloscCodecRecord> BloscCodecRecordPtr;
+typedef std::tr1::weak_ptr<BloscCodecRecord> BloscCodecRecordWPtr;
 
 /**
  * @brief A PVRecord that implements blosc compress/decompress.
  *
  *
  */
-class epicsShareClass CodecRecord :
+class epicsShareClass BloscCodecRecord :
     public epics::pvDatabase::PVRecord,
     public epicsThreadRunable
 {
 public:
-    POINTER_DEFINITIONS(CodecRecord);
+    POINTER_DEFINITIONS(BloscCodecRecord);
     /**
-     * @brief Factory method to create CodecRecord.
+     * @brief Factory method to create BloscCodecRecord.
      *
-     * @param recordName The name for the CodecRecord.
+     * @param recordName The name for the BloscCodecRecord.
      * @param channelName Initial name of record to compress/decompress.
      * @param codecName The initial value for the name of the codec.
-     * @return A shared pointer to CodecRecord,
+     * @return A shared pointer to BloscCodecRecord,
      */
-    static CodecRecordPtr create(
+    static BloscCodecRecordPtr create(
         std::string const & recordName,
         std::string const & channelName,
         std::string const & codecName
         );
-    virtual ~CodecRecord();
+    virtual ~BloscCodecRecord();
     /**
      * @brief perform requested command.
      */
@@ -69,7 +69,7 @@ public:
      */
     bool init();
 private:
-    CodecRecord(
+    BloscCodecRecord(
         std::string const & recordName,
         epics::pvData::PVStructurePtr const & pvStructure);
     void setAlarm(
@@ -84,7 +84,7 @@ private:
     void stopMonitor();
     
 
-    CodecBloscPtr codecBlosc;
+    BloscCodecPtr bloscCodec;
     epics::pvData::PVStructurePtr pvStructure;
     epics::pvDatabase::PVRecordPtr pvRecord;
     epics::pvData::PVStringPtr pvChannelName;
@@ -109,4 +109,4 @@ private:
 
 }}
 
-#endif  /* CODEC_RECORD_H */
+#endif  /* BLOSC_CODEC_RECORD_H */

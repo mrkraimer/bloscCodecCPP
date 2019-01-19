@@ -36,7 +36,7 @@
 #include <pv/pvDatabase.h>
 
 #include <epicsExport.h>
-#include <pv/codecRecord.h>
+#include <pv/bloscCodecRecord.h>
 
 using namespace epics::pvData;
 using namespace epics::pvAccess;
@@ -55,11 +55,11 @@ static const iocshArg testArg2 = { "codecName", iocshArgString };
 static const iocshArg *testArgs[] = {
     &testArg0,&testArg1,&testArg2};
 
-static const iocshFuncDef codecFuncDef = {
-    "codecCreateRecord", 3, testArgs};
-static void codecCallFunc(const iocshArgBuf *args)
+static const iocshFuncDef bloscCodecRecordFuncDef = {
+    "bloscCodecCreateRecord", 3, testArgs};
+static void bloscCodecRecordCallFunc(const iocshArgBuf *args)
 {
-    string recordName("codecRecord");
+    string recordName("bloscCodecRecord");
     string channelName("PVRdoubleArray");
     string codecName("BloscLZ");
     char *sval = args[0].sval;
@@ -70,22 +70,22 @@ static void codecCallFunc(const iocshArgBuf *args)
     if(sval) codecName = string(sval);
     PVDatabasePtr master = PVDatabase::getMaster();
     bool result(false);
-    CodecRecordPtr record =
-         CodecRecord::create(recordName,channelName,codecName);
+    BloscCodecRecordPtr record =
+         BloscCodecRecord::create(recordName,channelName,codecName);
     if(record) 
         result = master->addRecord(record);
     if(!result) cout << "recordname" << " not added" << endl;
 }
 
-static void codecRegister(void)
+static void bloscCodecRecordRegister(void)
 {
     static int firstTime = 1;
     if (firstTime) {
         firstTime = 0;
-        iocshRegister(&codecFuncDef, codecCallFunc);
+        iocshRegister(&bloscCodecRecordFuncDef, bloscCodecRecordCallFunc);
     }
 }
 
 extern "C" {
-    epicsExportRegistrar(codecRegister);
+    epicsExportRegistrar(bloscCodecRecordRegister);
 } 

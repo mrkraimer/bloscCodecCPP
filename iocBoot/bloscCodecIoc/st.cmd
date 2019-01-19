@@ -3,8 +3,8 @@
 cd ${TOP}
 
 ## Register all support components
-dbLoadDatabase("dbd/codecIoc.dbd")
-codecIoc_registerRecordDeviceDriver(pdbbase)
+dbLoadDatabase("dbd/bloscCodecIoc.dbd")
+bloscCodecIoc_registerRecordDeviceDriver(pdbbase)
 
 ## Load record instance
 dbLoadRecords("db/dbArray.db","name=DBRint8Array,nelem=500,type=CHAR");
@@ -18,21 +18,19 @@ dbLoadRecords("db/dbArray.db","name=DBRuint64Array,nelem=500,type=UINT64");
 dbLoadRecords("db/dbArray.db","name=DBRfloatArray,nelem=500,type=FLOAT");
 dbLoadRecords("db/dbArray.db","name=DBRdoubleArray,nelem=500,type=DOUBLE");
 
-
-
 cd ${TOP}/iocBoot/${IOC}
 iocInit()
-pvArrayCreateRecord PVRbyteArray pvByte
-pvArrayCreateRecord PVRshortArray pvShort
-pvArrayCreateRecord PVRintArray pvInt
-pvArrayCreateRecord PVRlongArray pvLong
+pvArrayCreateRecord PVRint8Array pvByte
+pvArrayCreateRecord PVRint16Array pvShort
+pvArrayCreateRecord PVRint32Array pvInt
+pvArrayCreateRecord PVRint64Array pvLong
+pvArrayCreateRecord PVRuint8Array pvUByte
+pvArrayCreateRecord PVRuint16Array pvUShort
+pvArrayCreateRecord PVRuint32Array pvUInt
+pvArrayCreateRecord PVRuint64Array pvULong
 pvArrayCreateRecord PVRfloatArray pvFloat
 pvArrayCreateRecord PVRdoubleArray pvDouble
-pvArrayCreateRecord PVRstringArray pvString
-pvArrayCreateRecord PVRbooleanArray pvBoolean
-pvArrayCreateRecord PVRubyteArray pvUByte
-pvArrayCreateRecord PVRushortArray pvUShort
-pvArrayCreateRecord PVRuintArray pvUInt
-pvArrayCreateRecord PVRulongArray pvULong
-codecCreateRecord codecRecord PVRubyteArray blosc
+
+bloscCodecCreateRecord bloscCodecRecord PVRubyteArray blosc
+
 
