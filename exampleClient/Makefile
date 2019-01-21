@@ -16,6 +16,12 @@ clientMonitorCodec_SRCS += clientMonitorCodec.cpp
 clientMonitorCodec_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
 
 
+PROD_HOST += clientCodec
+clientCodec_SRCS += clientCodec.cpp
+clientCodec_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
+clientCodec_LIBS += blosc
+
+
 PROD_SYS_LIBS_WIN32 += ws2_32
 
 

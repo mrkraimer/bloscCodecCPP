@@ -37,12 +37,12 @@ class ClientCodec :
 {
 private:
     PvaClientPtr pvaClient;
-    string channelName;
     PvaClientChannelPtr pvaClientChannel;
     bool channelConnected;
-    PvaClientGetPtr pvaClientGet;
     PvaClientPutPtr pvaClientPut;
+    PvaClientPutGetPtr pvaClientPutGet;
     PVUByteArrayPtr pvValue; 
+    string channelName;
 public:
     POINTER_DEFINITIONS(ClientCodec);
 private:
@@ -64,9 +64,7 @@ public:
     
     virtual void channelStateChange(PvaClientChannelPtr const & channel, bool isConnected);
     void connect(const string & codecChannelName);
-    void setChannelName(const string & channelName);
-    void get();
-    void compress();
+    void compress(const string & channelName);
     void decompress();
 
 
@@ -84,52 +82,31 @@ void ClientCodec::connect(const string & codecChannelName)
     pvaClientChannel->setStateChangeRequester(shared_from_this());
     try {
         pvaClientChannel->connect();
-        pvaClientGet = pvaClientChannel->get("field()");
     } catch (std::exception& e) {
         cerr << "exception " << e.what() << endl;
         return;
     }
 }
 
-void ClientCodec::setChannelName(const string &channelName)
+void ClientCodec::compress(const string &channelName)
 {
     if(!channelConnected) {
          cerr << "not connected to codecChannel\n";
          return;
     }
-    PvaClientPutPtr pvaClientPut(pvaClientChannel->put("field(channelName,command.index)"));
-    PvaClientPutDataPtr putData(pvaClientPut->getData());
-    PVStructurePtr pv(putData->getPVStructure());
-    pv->getSubField<PVInt>("command.index")->put(0);
-    pv->getSubField<PVString>("channelName")->put(channelName);
+    this->channelName = channelName;
+    PvaClientPutGetPtr pvaClientPutGet(
+         pvaClientChannel->createPutGet("putField(channelName,command.index)getField(value)"));
+    pvaClientPutGet->connect();
+    PvaClientPutDataPtr putData(pvaClientPutGet->getPutData());
+    PVStructurePtr pvData(putData->getPVStructure());
+    pvData->getSubField<PVInt>("command.index")->put(1);
+    pvData->getSubField<PVString>("channelName")->put(channelName);
     putData->getChangedBitSet()->set(0);
-    pvaClientPut->put();
-}
-
-void ClientCodec::get()
-{
-    if(!channelConnected) {
-         cerr << "not connected to codecChannel\n";
-         return;
-    }
-    pvaClientGet->get();
-    PVStructurePtr pv(pvaClientGet->getData()->getPVStructure());
-    cout << pv << "\n";
-}
-
-
-void ClientCodec::compress()
-{
-    if(!channelConnected) {
-         cerr << "not connected to codecChannel\n";
-         return;
-    }
-    PvaClientPutPtr pvaClientPut(pvaClientChannel->put("field(command.index)"));
-    PvaClientPutDataPtr putData(pvaClientPut->getData());
-    PVStructurePtr pv(putData->getPVStructure());
-    pv->getSubField<PVInt>("command.index")->put(1);
-    putData->getChangedBitSet()->set(0);
-    pvaClientPut->put();
+    pvaClientPutGet->putGet();
+    PvaClientGetDataPtr getData(pvaClientPutGet->getGetData());
+    pvValue = getData->getPVStructure()->getSubField<PVUByteArray>("value");
+cout << "pvValue\n" << pvValue << "\n";
 }
 
 void ClientCodec::decompress()
@@ -138,12 +115,21 @@ void ClientCodec::decompress()
          cerr << "not connected to codecChannel\n";
          return;
     }
-    PvaClientPutPtr pvaClientPut(pvaClientChannel->put("field(command.index)"));
-    PvaClientPutDataPtr putData(pvaClientPut->getData());
-    PVStructurePtr pv(putData->getPVStructure());
-    pv->getSubField<PVInt>("command.index")->put(2);
+    if(!pvValue) {
+         cerr << "compress was not issued\n";
+         return;
+    }
+    PvaClientPutGetPtr pvaClientPutGet(
+         pvaClientChannel->createPutGet("putField(value,channelName,command.index)getField(value)"));
+    pvaClientPutGet->connect();
+    PvaClientPutDataPtr putData(pvaClientPutGet->getPutData());
+    PVStructurePtr pvData(putData->getPVStructure());
+    pvData->getSubField<PVInt>("command.index")->put(2);
+    pvData->getSubField<PVString>("channelName")->put(channelName);
+    PVUByteArrayPtr pvDest(pvData->getSubField<PVUByteArray>("value"));
+    pvDest->copyUnchecked(*pvValue.get());
     putData->getChangedBitSet()->set(0);
-    pvaClientPut->put();
+    pvaClientPutGet->putGet();
 }
 
 
@@ -182,25 +168,17 @@ int main(int argc,char *argv[])
         if(debug) PvaClient::setDebug(true);
         ClientCodecPtr clientCodec(ClientCodec::create(pvaClient));
         while(true) {
-            cout << "enter one of: connect setChannelName get compress decompress exit\n";
+            cout << "enter one of: connect compress decompress exit\n";
             string str;
             getline(cin,str);
             if(str.compare("connect")==0){
                  clientCodec->connect(codecChannelName);
                  continue;
             }
-            if(str.compare("setChannelName")==0){
+            if(str.compare("compress")==0){
                  cout << "enter channelName\n";
                  getline(cin,str);
-                 clientCodec->setChannelName(str);
-                 continue;
-            }
-            if(str.compare("get")==0){
-                 clientCodec->get();
-                 continue;
-            }
-            if(str.compare("compress")==0){
-                 clientCodec->compress();
+                 clientCodec->compress(str);
                  continue;
             }
             if(str.compare("decompress")==0){

@@ -41,7 +41,7 @@ class epicsShareClass BloscCodecRecord :
 public:
     POINTER_DEFINITIONS(BloscCodecRecord);
     /**
-     * @brief Factory method to create BloscCodecRecord.
+     * @brief Factory method to create a BloscCodecRecord.
      *
      * @param recordName The name for the BloscCodecRecord.
      * @param channelName Initial name of record to compress/decompress.
@@ -63,7 +63,7 @@ public:
      */
     virtual void run();
     /**
-     * @brief p standard init method required by PVRecord
+     * @brief the standard init method required by PVRecord
      *
      * @return true unless record name already exists.
      */

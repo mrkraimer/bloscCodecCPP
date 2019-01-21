@@ -53,9 +53,25 @@ BloscCodecRecordPtr BloscCodecRecord::create(
     StandardFieldPtr standardField = getStandardField();
     PVDataCreatePtr pvDataCreate = getPVDataCreate();
 
-
-    StructureConstPtr  topStructure = BloscCodec::getCodecStructure();
+    StructureConstPtr bloscArgs(BloscCodec::getCodecStructure());
+    StructureConstPtr  topStructure = fieldCreate->createFieldBuilder()->
+         addArray("value",pvUByte)->
+         add("alarm",standardField->alarm()) ->
+         add("timeStamp",standardField->timeStamp()) -> 
+         add("channelName",pvString)->
+         add("codecName",pvString)->
+         add("elementScalarType",pvInt)->
+         add("command",standardField->enumerated()) ->
+         add("bloscArgs",bloscArgs) ->
+         createStructure();
     PVStructurePtr pvStructure = pvDataCreate->createPVStructure(topStructure);
+    PVStringArray::svector choices(5);
+    choices[0] = "idle";
+    choices[1] = "get";
+    choices[2] = "put";
+    choices[3] = "startMonitor";
+    choices[4] = "stopMonitor";
+    pvStructure->getSubField<PVStringArray>("command.choices")->replace(freeze(choices));
     pvStructure->getSubField<PVString>("channelName")->put(channelName);
    
     pvStructure->getSubField<PVString>("codecName")->put(codecName);
@@ -87,7 +103,7 @@ BloscCodecRecord::~BloscCodecRecord()
 bool BloscCodecRecord::init()
 {
     initPVRecord();
-    bloscCodec->initCodecStructure(pvStructure);
+    bloscCodec->initCodecStructure(pvStructure->getSubField<PVStructure>("bloscArgs"));
     PVStructurePtr pvStructure = getPVRecordStructure()->getPVStructure();
     pvValue = pvStructure->getSubField<PVUByteArray>("value");
     if(!pvValue) {

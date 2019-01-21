@@ -41,18 +41,7 @@ StructureConstPtr BloscCodec::createCodecStructure()
         add("shuffle",standardField->enumerated()) ->
         add("threads",pvInt)->
         createStructure();
-
-    StructureConstPtr  topStructure = fieldCreate->createFieldBuilder()->
-         addArray("value",pvUByte)->
-         add("alarm",standardField->alarm()) ->
-         add("timeStamp",standardField->timeStamp()) -> 
-         add("channelName",pvString)->
-         add("codecName",pvString)->
-         add("elementScalarType",pvInt)->
-         add("command",standardField->enumerated()) ->
-         add("bloscArgs",bloscArgs) ->
-         createStructure();
-    return topStructure;
+    return bloscArgs;
 }
 
 BloscCodecPtr BloscCodec::create()
@@ -375,27 +364,20 @@ StructureConstPtr BloscCodec::getCodecStructure()
 void BloscCodec::initCodecStructure(const PVStructurePtr & pvStructure)
 {
     PVStringArray::svector choices(6);
-    choices[0] = "idle";
-    choices[1] = "get";
-    choices[2] = "put";
-    choices[3] = "startMonitor";
-    choices[4] = "stopMonitor";
-    pvStructure->getSubField<PVStringArray>("command.choices")->replace(freeze(choices));
-    choices.resize(6);
     choices[0] = "blosclz";
     choices[1] = "lz4";
     choices[2] = "lz4hc";
     choices[3] = "snappy";
     choices[4] = "zlib";
     choices[5] = "zstd";
-    pvStructure->getSubField<PVStringArray>("bloscArgs.compressor.choices")->replace(freeze(choices));
+    pvStructure->getSubField<PVStringArray>("compressor.choices")->replace(freeze(choices));
     choices.resize(3);
     choices[0] = "NOSHUFFLE";
     choices[1] = "SHUFFLE";
     choices[2] = "BITSHUFFLE";
-    pvStructure->getSubField<PVStringArray>("bloscArgs.shuffle.choices")->replace(freeze(choices));
-    pvStructure->getSubField<PVInt>("bloscArgs.threads")->put(1);
-    pvStructure->getSubField<PVInt>("bloscArgs.level")->put(3);
+    pvStructure->getSubField<PVStringArray>("shuffle.choices")->replace(freeze(choices));
+    pvStructure->getSubField<PVInt>("threads")->put(1);
+    pvStructure->getSubField<PVInt>("level")->put(3);
 }
 
 }}
