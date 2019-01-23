@@ -80,6 +80,8 @@ void ClientPutArray::put()
      for(size_t i=1; i< (nelements-1); ++i) {
         values[i] = values[1];
      }
+     PVScalarArrayPtr pvScalarArray(putData->getPVStructure()->getSubField<PVScalarArray>("value"));
+     pvScalarArray->setLength(nelements);
      putData->putStringArray(values);      
      pvaClientPut->put();
 }

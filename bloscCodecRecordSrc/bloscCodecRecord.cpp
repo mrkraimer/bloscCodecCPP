@@ -81,7 +81,12 @@ BloscCodecRecord::BloscCodecRecord(
   bloscCodec(BloscCodec::create()),
   pvStructure(pvStructure),
   monitorStarted(false),
-  monitorIsPVRecord(false)
+  monitorIsPVRecord(false),
+  stopThread(false),
+  monitorLevel(0),
+  monitorCompressorIndex(0),
+  monitorShuffleIndex(0),
+  monitorThreads(1)
 {
 }
 
@@ -471,6 +476,10 @@ void BloscCodecRecord::run()
            beginGroupPut();
            pvStructure->getSubField<PVInt>("command.index")->put(1);
            pvStructure->getSubField<PVString>("channelName")->put(monitorChannelName);
+           pvStructure->getSubField<PVInt>("bloscArgs.level")->put(monitorLevel);
+           pvStructure->getSubField<PVInt>("bloscArgs.compressor.index")->put(monitorCompressorIndex);
+           pvStructure->getSubField<PVInt>("bloscArgs.shuffle.index")->put(monitorShuffleIndex);
+           pvStructure->getSubField<PVInt>("bloscArgs.threads")->put(monitorThreads);
            process();
            endGroupPut();
         } catch(...) {
@@ -506,6 +515,11 @@ void BloscCodecRecord::startMonitor()
        monitorIsPVRecord = false;
     }
     monitorChannelName = channelName;
+    monitorLevel = pvStructure->getSubField<PVInt>("bloscArgs.level")->get();
+    monitorCompressorIndex = pvStructure->getSubField<PVInt>("bloscArgs.compressor.index")->get();
+    monitorShuffleIndex = pvStructure->getSubField<PVInt>("bloscArgs.shuffle.index")->get();
+    monitorThreads = pvStructure->getSubField<PVInt>("bloscArgs.threads")->get();
+
     monitorStarted = true;
     thread =  std::auto_ptr<epicsThread>(new epicsThread(
         *this,

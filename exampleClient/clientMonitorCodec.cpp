@@ -17,7 +17,7 @@
 #include <epicsThread.h>
 #include <pv/event.h>
 #include <pv/timeStamp.h>
-#include <pv/convert.h>
+#include <pv/pvEnumerated.h>
 
 
 using namespace std;
@@ -41,8 +41,9 @@ private:
     string channelName;
     PvaClientChannelPtr pvaClientChannel;
     bool channelConnected;
-    PvaClientPutPtr pvaClientPut;
-    PVUByteArrayPtr pvValue; 
+    bool firstStart;
+    PVEnumerated compressor;
+    PVEnumerated shuffle;
 public:
     POINTER_DEFINITIONS(ClientCodec);
 private:
@@ -56,6 +57,7 @@ private:
     {
     }
     void connect();
+    string createPrompt(PVEnumerated & pvEnumerated);
 public:
     static ClientCodecPtr create(
         PvaClientPtr const &pvaClient,
@@ -83,7 +85,23 @@ void ClientCodec::connect()
     pvaClientChannel = pvaClient->createChannel(codecChannelName);
     pvaClientChannel->setStateChangeRequester(shared_from_this());
     pvaClientChannel->connect();
-}    
+}
+
+string ClientCodec::createPrompt(PVEnumerated & pvEnumerated)
+{
+    stringstream ss;
+    int n = pvEnumerated.getNumberChoices();
+    for(int i=0; i<n; ++i)
+    {
+        if(i!=0) ss << ",";
+        ss << i;
+        ss << "=";
+        pvEnumerated.setIndex(i);
+        ss << pvEnumerated.getChoice();
+    }
+    string result = ss.str() + "\n";
+    return result;
+}
 
 void ClientCodec::startMonitor(const string &channelName)
 {
@@ -91,13 +109,83 @@ void ClientCodec::startMonitor(const string &channelName)
          cerr << "not connected to codecChannel\n";
          return;
     }
-    PvaClientPutPtr pvaClientPut(pvaClientChannel->put("field(channelName,command.index)"));
-    PvaClientPutDataPtr putData(pvaClientPut->getData());
-    PVStructurePtr pv(putData->getPVStructure());
-    pv->getSubField<PVInt>("command.index")->put(3);
-    pv->getSubField<PVString>("channelName")->put(channelName);
+    if(firstStart) {
+        PvaClientGetPtr pvaClientGet(pvaClientChannel->createGet("bloscArgs"));
+        pvaClientGet->get();
+        PvaClientGetDataPtr data(pvaClientGet->getData());
+        PVStructurePtr pvStructure(data->getPVStructure());
+        compressor.attach(pvStructure->getSubField("bloscArgs.compressor"));
+        shuffle.attach(pvStructure->getSubField("bloscArgs.shuffle"));
+        firstStart = false;
+    }
+    string putRequest(
+      "putField(channelName,command.index,bloscArgs{level,compressor.index,shuffle.index,threads})");
+    string getRequest(
+      "getField(alarm)");
+    PvaClientPutGetPtr pvaClientPutGet(
+         pvaClientChannel->createPutGet(putRequest + getRequest));
+    pvaClientPutGet->connect();
+    PvaClientPutDataPtr putData(pvaClientPutGet->getPutData());
+    PVStructurePtr pvPutData(putData->getPVStructure());
+    pvPutData->getSubField<PVInt>("command.index")->put(3);
+    pvPutData->getSubField<PVString>("channelName")->put(channelName);
+    string str;
+    cout << "do You want to modify any bloscArgs? answer y or n\n";
+    getline(cin,str);
+    if(str.compare("y")==0){
+        int val = pvPutData->getSubField<PVInt>("bloscArgs.level")->get();
+        cout << "level is " << val << " do you want to change it?\n";
+        getline(cin,str);
+        if(str.compare("y")==0){
+             cout << "enter level\n";
+             getline(cin,str);
+             const char * cstr(str.c_str());
+             val = std::stoul (cstr,nullptr,0);
+             pvPutData->getSubField<PVInt>("bloscArgs.level")->put(val);
+        }
+        int index = pvPutData->getSubField<PVInt>("bloscArgs.compressor.index")->get();
+        compressor.setIndex(index);
+        string strval = compressor.getChoice();
+        string prompt("compressor is ");
+        prompt += strval + " do you want to change?\n";
+        cout << prompt;
+        getline(cin,str);
+        if(str.compare("y")==0){
+            cout << createPrompt(compressor);
+            getline(cin,str);
+            const char * cstr(str.c_str());
+            index = std::stoul (cstr,nullptr,0);
+            pvPutData->getSubField<PVInt>("bloscArgs.compressor.index")->put(index);
+        }
+        index = pvPutData->getSubField<PVInt>("bloscArgs.shuffle.index")->get();
+        shuffle.setIndex(index);
+        strval = shuffle.getChoice();
+        prompt = "shuffle is ";
+        prompt += strval + " do you want to change?\n";
+        cout << prompt;
+        getline(cin,str);
+        if(str.compare("y")==0){
+            cout << createPrompt(shuffle);
+            getline(cin,str);
+            const char * cstr(str.c_str());
+            index = std::stoul (cstr,nullptr,0);
+            pvPutData->getSubField<PVInt>("bloscArgs.shuffle.index")->put(index);
+        }
+        val = pvPutData->getSubField<PVInt>("bloscArgs.threads")->get();
+        cout << "threads is " << val << " do you want to change it?\n";
+        getline(cin,str);
+        if(str.compare("y")==0){
+             cout << "enter threads\n";
+             getline(cin,str);
+             const char * cstr(str.c_str());
+             val = std::stoul (cstr,nullptr,0);
+             pvPutData->getSubField<PVInt>("bloscArgs.threads")->put(val);
+        }
+    }
     putData->getChangedBitSet()->set(0);
-    pvaClientPut->put();
+    pvaClientPutGet->putGet();
+    PvaClientGetDataPtr getData(pvaClientPutGet->getGetData());
+    cout << getData->getPVStructure()->getSubField("alarm.message") << "\n";
 }
 
 

@@ -40,7 +40,7 @@ private:
     string codecChannelName;
     PvaClientChannelPtr pvaClientChannel;
     bool channelConnected;
-    bool firstConnect;
+    bool firstCompress;
     PVStructurePtr compressResult;
     PVEnumerated compressor;
     PVEnumerated shuffle;
@@ -55,7 +55,7 @@ private:
     : pvaClient(pvaClient),
       codecChannelName(codecChannelName),
       channelConnected(false),
-      firstConnect(true)
+      firstCompress(true)
     {
     }
     void connect();
@@ -109,14 +109,14 @@ void ClientCodec::compress(const string &channelName)
          cerr << "not connected to codecChannel\n";
          return;
     }
-    if(firstConnect) {
+    if(firstCompress) {
         PvaClientGetPtr pvaClientGet(pvaClientChannel->createGet("bloscArgs"));
         pvaClientGet->get();
         PvaClientGetDataPtr data(pvaClientGet->getData());
         PVStructurePtr pvStructure(data->getPVStructure());
         compressor.attach(pvStructure->getSubField("bloscArgs.compressor"));
         shuffle.attach(pvStructure->getSubField("bloscArgs.shuffle"));
-        firstConnect = false;
+        firstCompress = false;
     }
     string putRequest(
       "putField(channelName,command.index,bloscArgs{level,compressor.index,shuffle.index,threads})");
@@ -171,7 +171,16 @@ void ClientCodec::compress(const string &channelName)
             index = std::stoul (cstr,nullptr,0);
             pvPutData->getSubField<PVInt>("bloscArgs.shuffle.index")->put(index);
         }
-
+        val = pvPutData->getSubField<PVInt>("bloscArgs.threads")->get();
+        cout << "threads is " << val << " do you want to change it?\n";
+        getline(cin,str);
+        if(str.compare("y")==0){
+             cout << "enter threads\n";
+             getline(cin,str);
+             const char * cstr(str.c_str());
+             val = std::stoul (cstr,nullptr,0);
+             pvPutData->getSubField<PVInt>("bloscArgs.threads")->put(val);
+        }
     }
     putData->getChangedBitSet()->set(0);
     pvaClientPutGet->putGet();

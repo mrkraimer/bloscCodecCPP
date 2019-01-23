@@ -91,9 +91,13 @@ private:
     epics::pvData::TimeStamp timeStamp;
 
     bool monitorStarted;
+    bool monitorIsPVRecord;
     bool stopThread;
     std::string monitorChannelName;
-    bool monitorIsPVRecord;
+    int monitorLevel;
+    int monitorCompressorIndex;
+    int monitorShuffleIndex;
+    int monitorThreads;
     std::auto_ptr<epicsThread> thread;
 public:
     epics::pvData::Event monitorEvent ;
