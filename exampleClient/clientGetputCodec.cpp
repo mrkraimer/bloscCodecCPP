@@ -17,7 +17,7 @@
 #include <epicsThread.h>
 #include <pv/event.h>
 #include <pv/timeStamp.h>
-#include <pv/convert.h>
+#include <pv/pvEnumerated.h>
 
 
 using namespace std;
@@ -40,10 +40,10 @@ private:
     string codecChannelName;
     PvaClientChannelPtr pvaClientChannel;
     bool channelConnected;
-    PvaClientPutPtr pvaClientPut;
-    PvaClientPutGetPtr pvaClientPutGet;
-    PVUByteArrayPtr pvValue; 
-    string channelName;
+    bool firstConnect;
+    PVStructurePtr compressResult;
+    PVEnumerated compressor;
+    PVEnumerated shuffle;
 public:
     POINTER_DEFINITIONS(ClientCodec);
     virtual void channelStateChange(PvaClientChannelPtr const & channel, bool isConnected);
@@ -54,10 +54,12 @@ private:
     )
     : pvaClient(pvaClient),
       codecChannelName(codecChannelName),
-      channelConnected(false)
+      channelConnected(false),
+      firstConnect(true)
     {
     }
     void connect();
+    string createPrompt(PVEnumerated & pvEnumerated);
 public:
     static ClientCodecPtr create(
         PvaClientPtr const &pvaClient,
@@ -74,7 +76,7 @@ public:
 
 void ClientCodec::channelStateChange(PvaClientChannelPtr const & channel, bool isConnected)
     {
-cout << "channelStateChange is Connected " << (isConnected ? "true" : "false") << "\n";
+cout << "channelStateChange isConnected " << (isConnected ? "true" : "false") << "\n";
         channelConnected = isConnected;
     }
 
@@ -85,24 +87,97 @@ void ClientCodec::connect()
     pvaClientChannel->connect();
 }
 
+string ClientCodec::createPrompt(PVEnumerated & pvEnumerated)
+{
+    stringstream ss;
+    int n = pvEnumerated.getNumberChoices();
+    for(int i=0; i<n; ++i)
+    {
+        if(i!=0) ss << ",";
+        ss << i;
+        ss << "=";
+        pvEnumerated.setIndex(i);
+        ss << pvEnumerated.getChoice();
+    }
+    string result = ss.str() + "\n";
+    return result;
+}
+
 void ClientCodec::compress(const string &channelName)
 {
     if(!channelConnected) {
          cerr << "not connected to codecChannel\n";
          return;
     }
-    this->channelName = channelName;
+    if(firstConnect) {
+        PvaClientGetPtr pvaClientGet(pvaClientChannel->createGet("bloscArgs"));
+        pvaClientGet->get();
+        PvaClientGetDataPtr data(pvaClientGet->getData());
+        PVStructurePtr pvStructure(data->getPVStructure());
+        compressor.attach(pvStructure->getSubField("bloscArgs.compressor"));
+        shuffle.attach(pvStructure->getSubField("bloscArgs.shuffle"));
+        firstConnect = false;
+    }
+    string putRequest(
+      "putField(channelName,command.index,bloscArgs{level,compressor.index,shuffle.index,threads})");
+    string getRequest(
+      "getField(value,alarm,channelName,bloscArgs{compressedSize,decompressedSize,level,compressor.index,shuffle.index,threads})");
     PvaClientPutGetPtr pvaClientPutGet(
-         pvaClientChannel->createPutGet("putField(channelName,command.index)getField(value)"));
+         pvaClientChannel->createPutGet(putRequest + getRequest));
     pvaClientPutGet->connect();
     PvaClientPutDataPtr putData(pvaClientPutGet->getPutData());
-    PVStructurePtr pvData(putData->getPVStructure());
-    pvData->getSubField<PVInt>("command.index")->put(1);
-    pvData->getSubField<PVString>("channelName")->put(channelName);
+    PVStructurePtr pvPutData(putData->getPVStructure());
+    pvPutData->getSubField<PVInt>("command.index")->put(1);
+    pvPutData->getSubField<PVString>("channelName")->put(channelName);
+    string str;
+    cout << "do You want to modify any bloscArgs? answer y or n\n";
+    getline(cin,str);
+    if(str.compare("y")==0){
+        int val = pvPutData->getSubField<PVInt>("bloscArgs.level")->get();
+        cout << "level is " << val << " do you want to change it?\n";
+        getline(cin,str);
+        if(str.compare("y")==0){
+             cout << "enter level\n";
+             getline(cin,str);
+             const char * cstr(str.c_str());
+             val = std::stoul (cstr,nullptr,0);
+             pvPutData->getSubField<PVInt>("bloscArgs.level")->put(val);
+        }
+        int index = pvPutData->getSubField<PVInt>("bloscArgs.compressor.index")->get();
+        compressor.setIndex(index);
+        string strval = compressor.getChoice();
+        string prompt("compressor is ");
+        prompt += strval + " do you want to change?\n";
+        cout << prompt;
+        getline(cin,str);
+        if(str.compare("y")==0){
+            cout << createPrompt(compressor);
+            getline(cin,str);
+            const char * cstr(str.c_str());
+            index = std::stoul (cstr,nullptr,0);
+            pvPutData->getSubField<PVInt>("bloscArgs.compressor.index")->put(index);
+        }
+        index = pvPutData->getSubField<PVInt>("bloscArgs.shuffle.index")->get();
+        shuffle.setIndex(index);
+        strval = shuffle.getChoice();
+        prompt = "shuffle is ";
+        prompt += strval + " do you want to change?\n";
+        cout << prompt;
+        getline(cin,str);
+        if(str.compare("y")==0){
+            cout << createPrompt(shuffle);
+            getline(cin,str);
+            const char * cstr(str.c_str());
+            index = std::stoul (cstr,nullptr,0);
+            pvPutData->getSubField<PVInt>("bloscArgs.shuffle.index")->put(index);
+        }
+
+    }
     putData->getChangedBitSet()->set(0);
     pvaClientPutGet->putGet();
     PvaClientGetDataPtr getData(pvaClientPutGet->getGetData());
-    pvValue = getData->getPVStructure()->getSubField<PVUByteArray>("value");
+    compressResult = getData->getPVStructure();
+    cout << compressResult->getSubField("alarm.message") << "\n";
 }
 
 void ClientCodec::decompress()
@@ -111,21 +186,42 @@ void ClientCodec::decompress()
          cerr << "not connected to codecChannel\n";
          return;
     }
-    if(!pvValue) {
+    if(!compressResult) {
          cerr << "compress was not issued\n";
          return;
     }
+    string putRequest(
+      "putField(value,channelName,command.index,bloscArgs{compressedSize,decompressedSize,level,compressor.index,shuffle.index,threads})");
+    string getRequest(
+      "getField(alarm)");
     PvaClientPutGetPtr pvaClientPutGet(
-         pvaClientChannel->createPutGet("putField(value,channelName,command.index)getField(value)"));
+         pvaClientChannel->createPutGet(putRequest+getRequest));
     pvaClientPutGet->connect();
     PvaClientPutDataPtr putData(pvaClientPutGet->getPutData());
-    PVStructurePtr pvData(putData->getPVStructure());
-    pvData->getSubField<PVInt>("command.index")->put(2);
-    pvData->getSubField<PVString>("channelName")->put(channelName);
-    PVUByteArrayPtr pvDest(pvData->getSubField<PVUByteArray>("value"));
+    PVStructurePtr pvPutData(putData->getPVStructure());
+    putData->getChangedBitSet()->set(0);
+    pvPutData->getSubField<PVInt>("command.index")->put(2);
+    string channelName = compressResult->getSubField<PVString>("channelName")->get();
+    pvPutData->getSubField<PVString>("channelName")->put(channelName);
+    PVUByteArrayPtr pvValue = compressResult->getSubField<PVUByteArray>("value");
+    PVUByteArrayPtr pvDest(pvPutData->getSubField<PVUByteArray>("value"));
     pvDest->copyUnchecked(*pvValue.get());
+    int size = compressResult->getSubField<PVInt>("bloscArgs.compressedSize")->get();
+    pvPutData->getSubField<PVInt>("bloscArgs.compressedSize")->put(size);
+    size = compressResult->getSubField<PVInt>("bloscArgs.decompressedSize")->get();
+    pvPutData->getSubField<PVInt>("bloscArgs.decompressedSize")->put(size);
+    int level = compressResult->getSubField<PVInt>("bloscArgs.level")->get();
+    pvPutData->getSubField<PVInt>("bloscArgs.level")->put(level);
+    int index = compressResult->getSubField<PVInt>("bloscArgs.compressor.index")->get();
+    pvPutData->getSubField<PVInt>("bloscArgs.compressor.index")->put(index);
+    index = compressResult->getSubField<PVInt>("bloscArgs.shuffle.index")->get();
+    pvPutData->getSubField<PVInt>("bloscArgs.shuffle.index")->put(index);
+    int threads = compressResult->getSubField<PVInt>("bloscArgs.threads")->get();
+    pvPutData->getSubField<PVInt>("bloscArgs.threads")->put(threads);
     putData->getChangedBitSet()->set(0);
     pvaClientPutGet->putGet();
+    PvaClientGetDataPtr getData(pvaClientPutGet->getGetData());
+    cout << getData->getPVStructure()->getSubField("alarm.message") << "\n";
 }
 
 
