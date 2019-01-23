@@ -44,15 +44,9 @@ public:
      * @brief Factory method to create a BloscCodecRecord.
      *
      * @param recordName The name for the BloscCodecRecord.
-     * @param channelName Initial name of record to compress/decompress.
-     * @param codecName The initial value for the name of the codec.
      * @return A shared pointer to BloscCodecRecord,
      */
-    static BloscCodecRecordPtr create(
-        std::string const & recordName,
-        std::string const & channelName,
-        std::string const & codecName
-        );
+    static BloscCodecRecordPtr create(std::string const & recordName);
     virtual ~BloscCodecRecord();
     /**
      * @brief perform requested command.

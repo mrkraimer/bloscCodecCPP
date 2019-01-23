@@ -37,33 +37,37 @@ class ClientCodec :
 {
 private:
     PvaClientPtr pvaClient;
+    string codecChannelName;
     string channelName;
     PvaClientChannelPtr pvaClientChannel;
     bool channelConnected;
-    PvaClientGetPtr pvaClientGet;
     PvaClientPutPtr pvaClientPut;
     PVUByteArrayPtr pvValue; 
 public:
     POINTER_DEFINITIONS(ClientCodec);
 private:
     ClientCodec(
-         PvaClientPtr const &pvaClient
+         PvaClientPtr const &pvaClient,
+         const string & codecChannelName
     )
     : pvaClient(pvaClient),
+      codecChannelName(codecChannelName),
       channelConnected(false)
     {
     }
+    void connect();
 public:
     static ClientCodecPtr create(
-        PvaClientPtr const &pvaClient
+        PvaClientPtr const &pvaClient,
+        const string & codecChannelName
     )
     {
-        ClientCodecPtr client(ClientCodecPtr(new ClientCodec(pvaClient)));
+        ClientCodecPtr client(ClientCodecPtr(new ClientCodec(pvaClient,codecChannelName)));
+        client->connect();
         return client;
     }
     
     virtual void channelStateChange(PvaClientChannelPtr const & channel, bool isConnected);
-    void connect(const string & codecChannelName);
     void startMonitor(const string & channelName);
     void stopMonitor();
 };
@@ -74,18 +78,12 @@ cout << "channelStateChange is Connected " << (isConnected ? "true" : "false") <
         channelConnected = isConnected;
     }
 
-void ClientCodec::connect(const string & codecChannelName)
+void ClientCodec::connect()
 {
     pvaClientChannel = pvaClient->createChannel(codecChannelName);
     pvaClientChannel->setStateChangeRequester(shared_from_this());
-    try {
-        pvaClientChannel->connect();
-        pvaClientGet = pvaClientChannel->get("field()");
-    } catch (std::exception& e) {
-        cerr << "exception " << e.what() << endl;
-        return;
-    }
-}
+    pvaClientChannel->connect();
+}    
 
 void ClientCodec::startMonitor(const string &channelName)
 {
@@ -123,7 +121,6 @@ int main(int argc,char *argv[])
 {
     string argString("");
     string codecChannelName("bloscCodecRecord");
-    string channelName("PVRdoubleArray");
     bool debug(false);
     int opt;
     while((opt = getopt(argc, argv, "hc:d:")) != -1) {
@@ -152,15 +149,11 @@ int main(int argc,char *argv[])
     PvaClientPtr pvaClient(PvaClient::get("pva"));
     try {  
         if(debug) PvaClient::setDebug(true);
-        ClientCodecPtr clientCodec(ClientCodec::create(pvaClient));
+        ClientCodecPtr clientCodec(ClientCodec::create(pvaClient,codecChannelName));
         while(true) {
-            cout << "enter one of: connect startMonitor stopMonitor exit\n";
+            cout << "enter one of: startMonitor stopMonitor exit\n";
             string str;
             getline(cin,str);
-            if(str.compare("connect")==0){
-                 clientCodec->connect(codecChannelName);
-                 continue;
-            }
             if(str.compare("startMonitor")==0){
                  cout << "enter channelName\n";
                  getline(cin,str);

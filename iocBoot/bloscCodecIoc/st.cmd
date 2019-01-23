@@ -31,6 +31,6 @@ pvArrayCreateRecord PVRuint64Array pvULong
 pvArrayCreateRecord PVRfloatArray pvFloat
 pvArrayCreateRecord PVRdoubleArray pvDouble
 
-bloscCodecCreateRecord bloscCodecRecord PVRubyteArray blosc
+bloscCodecCreateRecord bloscCodecRecord
 
 

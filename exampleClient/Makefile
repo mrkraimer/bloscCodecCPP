@@ -21,6 +21,10 @@ clientCodec_SRCS += clientCodec.cpp
 clientCodec_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
 clientCodec_LIBS += blosc
 
+PROD_HOST += clientPutArray
+clientPutArray_SRCS += clientPutArray.cpp
+clientPutArray_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
+
 
 PROD_SYS_LIBS_WIN32 += ws2_32
 

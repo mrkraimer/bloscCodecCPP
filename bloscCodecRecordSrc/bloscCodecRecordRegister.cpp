@@ -50,30 +50,19 @@ using std::string;
 static StandardPVFieldPtr standardPVField = getStandardPVField();
 
 static const iocshArg testArg0 = { "recordName", iocshArgString };
-static const iocshArg testArg1 = { "channelName", iocshArgString };
-static const iocshArg testArg2 = { "codecName", iocshArgString };
 static const iocshArg *testArgs[] = {
-    &testArg0,&testArg1,&testArg2};
+    &testArg0};
 
-static const iocshFuncDef bloscCodecRecordFuncDef = {
-    "bloscCodecCreateRecord", 3, testArgs};
+static const iocshFuncDef bloscCodecRecordFuncDef = {"bloscCodecCreateRecord", 1, testArgs};
 static void bloscCodecRecordCallFunc(const iocshArgBuf *args)
 {
     string recordName("bloscCodecRecord");
-    string channelName("PVRdoubleArray");
-    string codecName("BloscLZ");
     char *sval = args[0].sval;
     if(sval) recordName = string(sval);
-    sval = args[1].sval;
-    if(sval) channelName = string(sval);
-    sval = args[2].sval;
-    if(sval) codecName = string(sval);
     PVDatabasePtr master = PVDatabase::getMaster();
     bool result(false);
-    BloscCodecRecordPtr record =
-         BloscCodecRecord::create(recordName,channelName,codecName);
-    if(record) 
-        result = master->addRecord(record);
+    BloscCodecRecordPtr record(BloscCodecRecord::create(recordName));
+    if(record) result = master->addRecord(record);
     if(!result) cout << "recordname" << " not added" << endl;
 }
 

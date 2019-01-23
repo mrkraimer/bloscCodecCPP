@@ -44,10 +44,7 @@ typedef long (*put_array_info) (void *,long);
 }
 
 
-BloscCodecRecordPtr BloscCodecRecord::create(
-    string const & recordName,
-    string const & channelName,
-    string const & codecName)
+BloscCodecRecordPtr BloscCodecRecord::create(string const & recordName)
 {
     FieldCreatePtr fieldCreate = getFieldCreate();
     StandardFieldPtr standardField = getStandardField();
@@ -59,7 +56,6 @@ BloscCodecRecordPtr BloscCodecRecord::create(
          add("alarm",standardField->alarm()) ->
          add("timeStamp",standardField->timeStamp()) -> 
          add("channelName",pvString)->
-         add("codecName",pvString)->
          add("elementScalarType",pvInt)->
          add("command",standardField->enumerated()) ->
          add("bloscArgs",bloscArgs) ->
@@ -72,9 +68,6 @@ BloscCodecRecordPtr BloscCodecRecord::create(
     choices[3] = "startMonitor";
     choices[4] = "stopMonitor";
     pvStructure->getSubField<PVStringArray>("command.choices")->replace(freeze(choices));
-    pvStructure->getSubField<PVString>("channelName")->put(channelName);
-   
-    pvStructure->getSubField<PVString>("codecName")->put(codecName);
     BloscCodecRecordPtr pvRecord(
         new BloscCodecRecord(recordName,pvStructure)); 
     if(!pvRecord->init()) pvRecord.reset();
@@ -142,11 +135,6 @@ bool BloscCodecRecord::compressPVRecord()
     }
     ScalarType scalarType(pvScalarArray->getScalarArray()->getElementType());
     pvStructure->getSubField<PVInt>("elementScalarType")->put(scalarType);
-    string codecName = pvStructure->getSubField<PVString>("codecName")->get();
-    if(codecName.compare("blosc")!=0) {
-        setAlarm(codecName + " codec not supported",invalidAlarm,clientStatus);
-        return false;
-    }
     pvRecord->lock();
     try {
         bool result = bloscCodec->compressBlosc(
@@ -175,11 +163,6 @@ bool BloscCodecRecord::decompressPVRecord()
               pvRecord->getPVStructure()->getSubField<PVScalarArray>("value");
     if(!pvScalarArray) {
          setAlarm(channelName + " no scalar array value",invalidAlarm,clientStatus);
-        return false;
-    }
-    string codecName = pvStructure->getSubField<PVString>("codecName")->get();
-    if(codecName.compare("blosc")!=0) {
-        setAlarm(codecName + " codec not supported",invalidAlarm,clientStatus);
         return false;
     }
     pvRecord->lock();
@@ -261,12 +244,6 @@ bool BloscCodecRecord::compressDBRecord()
     const void * decompressAddr = dbChannelField(pchan);
     size_t length = rec_length;
     size_t decompressSize = length * elementsize;
-    string codecName = pvStructure->getSubField<PVString>("codecName")->get();
-    if(codecName.compare("blosc")!=0) {
-        setAlarm(codecName + " codec not supported",invalidAlarm,clientStatus);
-        dbScanUnlock(precord);
-        return false;
-    }
     bool result = bloscCodec->compressBlosc(
         pvStructure->getSubField<PVUByteArray>("value"),
         decompressAddr,decompressSize,
@@ -331,11 +308,6 @@ bool BloscCodecRecord::decompressDBRecord()
     long max_elements  = dbChannelFinalElements(pchan);
     size_t maxbytes = max_elements*elementsize;
     if(decompressSize>maxbytes) decompressSize = maxbytes;
-    string codecName = pvStructure->getSubField<PVString>("codecName")->get();
-    if(codecName.compare("blosc")!=0) {
-        setAlarm(codecName + " codec not supported",invalidAlarm,clientStatus);
-        return false;
-    }
     struct dbCommon *precord = dbChannelRecord(pchan);
     dbScanLock(precord);
     bool result = bloscCodec->decompressBlosc(
