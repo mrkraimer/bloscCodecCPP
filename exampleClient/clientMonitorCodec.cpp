@@ -195,12 +195,20 @@ void ClientCodec::stopMonitor()
          cerr << "not connected to codecChannel\n";
          return;
     }
-    PvaClientPutPtr pvaClientPut(pvaClientChannel->put("field(command.index)"));
-    PvaClientPutDataPtr putData(pvaClientPut->getData());
-    PVStructurePtr pv(putData->getPVStructure());
-    pv->getSubField<PVInt>("command.index")->put(4);
+    string putRequest(
+      "putField(command.index)");
+    string getRequest(
+      "getField(alarm)");
+    PvaClientPutGetPtr pvaClientPutGet(
+         pvaClientChannel->createPutGet(putRequest + getRequest));
+    pvaClientPutGet->connect();
+    PvaClientPutDataPtr putData(pvaClientPutGet->getPutData());
+    PVStructurePtr pvPutData(putData->getPVStructure());
+    pvPutData->getSubField<PVInt>("command.index")->put(4);
     putData->getChangedBitSet()->set(0);
-    pvaClientPut->put();
+    pvaClientPutGet->putGet();
+    PvaClientGetDataPtr getData(pvaClientPutGet->getGetData());
+    cout << getData->getPVStructure()->getSubField("alarm.message") << "\n";
 }
 
 

@@ -527,15 +527,21 @@ void BloscCodecRecord::startMonitor()
         epicsThreadGetStackSize(epicsThreadStackSmall),
         epicsThreadPriorityLow));
     thread->start();
+    setAlarm(" monitor is started",noAlarm,clientStatus);
 }
 
 void BloscCodecRecord::stopMonitor()
 {
+    if(!monitorStarted) {
+        setAlarm(" monitor is not started",noAlarm,clientStatus);
+        return;
+    }
     stopThread = true;
     monitorEvent.signal();
     runReturn.wait();
     stopThread = false;
     monitorStarted = false;
+    setAlarm(" monitor is stopped",noAlarm,clientStatus);
 }
 
 }}
