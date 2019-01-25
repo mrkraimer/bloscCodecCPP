@@ -15,6 +15,10 @@ PROD_HOST += clientMonitorCodec
 clientMonitorCodec_SRCS += clientMonitorCodec.cpp
 clientMonitorCodec_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
 
+PROD_HOST += clientDecompressCodec
+clientDecompressCodec_SRCS += clientDecompressCodec.cpp
+clientDecompressCodec_LIBS += $(EPICS_BASE_PVA_CORE_LIBS)
+clientDecompressCodec_LIBS += blosc
 
 PROD_HOST += clientCodec
 clientCodec_SRCS += clientCodec.cpp
