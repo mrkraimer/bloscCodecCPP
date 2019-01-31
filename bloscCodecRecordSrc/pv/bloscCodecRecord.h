@@ -80,7 +80,6 @@ private:
 
     BloscCodecPtr bloscCodec;
     epics::pvData::PVStructurePtr pvStructure;
-    epics::pvDatabase::PVRecordPtr pvRecord;
     epics::pvData::PVStringPtr pvChannelName;
     epics::pvData::PVUByteArrayPtr pvValue;
     epics::pvData::PVStructurePtr pvAlarmField;

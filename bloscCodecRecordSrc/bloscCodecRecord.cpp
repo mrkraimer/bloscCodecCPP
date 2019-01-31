@@ -135,7 +135,7 @@ bool BloscCodecRecord::compressPVRecord()
     PVScalarArrayPtr pvScalarArray = 
               pvRecord->getPVStructure()->getSubField<PVScalarArray>("value");
     if(!pvScalarArray) {
-         setAlarm(channelName + " no scalar array value",invalidAlarm,clientStatus);
+         setAlarm(string("compress failure ") + channelName + " no scalar array value",invalidAlarm,clientStatus);
         return false;
     }
     ScalarType scalarType(pvScalarArray->getScalarArray()->getElementType());
@@ -143,16 +143,18 @@ bool BloscCodecRecord::compressPVRecord()
     pvRecord->lock();
     try {
         bool result = bloscCodec->compressBlosc(
-            pvStructure->getSubField<PVUByteArray>("value"),
+            pvValue,
             pvScalarArray,
             pvStructure->getSubField<PVStructure>("bloscArgs")); 
         if(result) {
-            setAlarm("compressBlosc success",noAlarm,clientStatus);
+            setAlarm("compress success",noAlarm,clientStatus);
         } else {
-            setAlarm("compressBlosc failure",invalidAlarm,clientStatus);
+            string reason("compress failure ");
+            reason += bloscCodec->getMessage();
+            setAlarm(reason,invalidAlarm,clientStatus);
         }
     } catch(...) {
-         setAlarm("compressBlosc exception",invalidAlarm,clientStatus);
+         setAlarm("compress failure exception",invalidAlarm,clientStatus);
     }
     pvRecord->unlock();
     return true;
@@ -167,7 +169,7 @@ bool BloscCodecRecord::decompressPVRecord()
     PVScalarArrayPtr pvScalarArray = 
               pvRecord->getPVStructure()->getSubField<PVScalarArray>("value");
     if(!pvScalarArray) {
-         setAlarm(channelName + " no scalar array value",invalidAlarm,clientStatus);
+         setAlarm(string("decompress failure ") + channelName + "  no scalar array value",invalidAlarm,clientStatus);
         return false;
     }
     pvRecord->lock();
@@ -177,12 +179,14 @@ bool BloscCodecRecord::decompressPVRecord()
             pvScalarArray,
             pvStructure->getSubField<PVStructure>("bloscArgs")); 
         if(result) {
-            setAlarm("decompressBlosc success",noAlarm,clientStatus);
+            setAlarm("decompress success",noAlarm,clientStatus);
         } else {
-            setAlarm("decompressBlosc failure",invalidAlarm,clientStatus);
+            string reason("decompress failure ");
+            reason += bloscCodec->getMessage();
+            setAlarm(reason,invalidAlarm,clientStatus);
         }
     } catch(...) {
-         setAlarm("decompressBlosc exception",invalidAlarm,clientStatus);
+         setAlarm("decompress failure exception",invalidAlarm,clientStatus);
     }
     pvRecord->unlock();
     return true;
@@ -242,7 +246,7 @@ bool BloscCodecRecord::compressDBRecord()
     get_info = (get_array_info)(prset->get_array_info);
     get_info(&pchan->addr, &rec_length, &rec_offset);
     if(rec_offset!=0) {
-        setAlarm(" Can't handle offset != 0",invalidAlarm,clientStatus);
+        setAlarm("compress failure can not handle offset != 0",invalidAlarm,clientStatus);
         dbScanUnlock(precord);
         return false;
     }
@@ -254,9 +258,11 @@ bool BloscCodecRecord::compressDBRecord()
         decompressAddr,decompressSize,
         pvStructure->getSubField<PVStructure>("bloscArgs")); 
     if(result) {
-        setAlarm("compressBlosc success",noAlarm,clientStatus);
+        setAlarm("compress success",noAlarm,clientStatus);
     } else {
-        setAlarm("compressBlosc failure",invalidAlarm,clientStatus);
+        string reason("compress failure ");
+        reason += bloscCodec->getMessage();
+        setAlarm(reason,invalidAlarm,clientStatus);
     }
     dbScanUnlock(precord);
     return true;
@@ -269,12 +275,12 @@ bool BloscCodecRecord::decompressDBRecord()
     if(pchan==NULL) return false;
     long status = dbChannelOpen(pchan);
     if (status) {
-        setAlarm(channelName + " dbChannelOpen failed",invalidAlarm,clientStatus);
+        setAlarm(string("decompress failure ") +  channelName + " dbChannelOpen failed",invalidAlarm,clientStatus);
         return true;
     }
     Type type = (dbChannelSpecial(pchan)==SPC_DBADDR) ? scalarArray : scalar;
     if(type!=scalarArray) {
-        setAlarm(channelName + " is not a scalarArray",invalidAlarm,clientStatus);
+        setAlarm(string("decompress failure ") + channelName + " is not a scalarArray",invalidAlarm,clientStatus);
         return true;
     }
     long rec_length = 0;
@@ -284,7 +290,7 @@ bool BloscCodecRecord::decompressDBRecord()
     get_info = (get_array_info)(prset->get_array_info);
     get_info(&pchan->addr, &rec_length, &rec_offset);
     if(rec_offset!=0) {
-           throw std::logic_error("Can't handle offset != 0");
+           throw std::logic_error(string("decompress failure ") + channelName + " can not handle offset != 0");
     }
     void * decompressAddr = dbChannelField(pchan);
     int elementsize = 0;
@@ -306,7 +312,7 @@ bool BloscCodecRecord::decompressDBRecord()
     case DBF_DOUBLE:
         elementsize = 8; break;
     default:
-        setAlarm(channelName + " unsupported DBF_type",invalidAlarm,clientStatus);
+        setAlarm("decompress failure  unsupported DBF_type",invalidAlarm,clientStatus);
         return true;
     }
     size_t decompressSize = pvStructure->getSubField<PVInt>("bloscArgs.decompressedSize")->get();
@@ -320,14 +326,16 @@ bool BloscCodecRecord::decompressDBRecord()
         decompressAddr,decompressSize,
         pvStructure->getSubField<PVStructure>("bloscArgs")); 
     if(result) {
-        setAlarm("decompressBlosc success",noAlarm,clientStatus);
+        setAlarm("decompress success",noAlarm,clientStatus);
         long nelements = decompressSize/elementsize;
         put_array_info put_info;
         put_info = (put_array_info)(prset->put_array_info);
         put_info(&pchan->addr, nelements);
         dbProcess(precord);
     } else {
-        setAlarm("decompressBlosc failure",invalidAlarm,clientStatus);
+        string reason("decompress failure ");
+        reason += bloscCodec->getMessage();
+        setAlarm(reason,invalidAlarm,clientStatus);
     }
     dbScanUnlock(precord);
     return true;
@@ -351,12 +359,12 @@ void BloscCodecRecord::process()
     case 1: // get
           if(compressPVRecord()) break;
           if(compressDBRecord()) break;
-          setAlarm(channelName +" does not exist",noAlarm,clientStatus);
+          setAlarm(string("get failure ") + channelName +" does not exist",noAlarm,clientStatus);
           break;
     case 2: // put
           if(decompressPVRecord()) break;
           if(decompressDBRecord()) break;
-          setAlarm(channelName +" does not exist",noAlarm,clientStatus);
+          setAlarm(string("put failure ") + channelName +" does not exist",noAlarm,clientStatus);
           break;
     case 3: // startMonitor
           startMonitor();
@@ -365,7 +373,7 @@ void BloscCodecRecord::process()
           stopMonitor();
           break;
     default:
-          setAlarm("illegal command",invalidAlarm,clientStatus);
+          setAlarm("failure illegal command",invalidAlarm,clientStatus);
     }
     PVRecord::process();
 }
@@ -498,7 +506,7 @@ void BloscCodecRecord::run()
 void BloscCodecRecord::startMonitor()
 {
     if(monitorStarted) {
-       setAlarm("monitor is already started",noAlarm,clientStatus);
+       setAlarm("startMonitor failure monitor is already started",noAlarm,clientStatus);
        return;
     }
     string channelName(pvChannelName->get());
@@ -509,7 +517,7 @@ void BloscCodecRecord::startMonitor()
     } else {
        dbChannel *pchan = dbChannelCreate(channelName.c_str());
        if(pchan==NULL) {
-           setAlarm(channelName +" is not found",noAlarm,clientStatus);
+           setAlarm(string("startMonitor failure ") + channelName +" is not found",noAlarm,clientStatus);
            return;
        }
        monitorIsPVRecord = false;
@@ -527,13 +535,13 @@ void BloscCodecRecord::startMonitor()
         epicsThreadGetStackSize(epicsThreadStackSmall),
         epicsThreadPriorityLow));
     thread->start();
-    setAlarm(" monitor is started",noAlarm,clientStatus);
+    setAlarm("startMonitor success",noAlarm,clientStatus);
 }
 
 void BloscCodecRecord::stopMonitor()
 {
     if(!monitorStarted) {
-        setAlarm(" monitor is not started",noAlarm,clientStatus);
+        setAlarm("stopMonitor failure  monitor is not started",noAlarm,clientStatus);
         return;
     }
     stopThread = true;
@@ -541,7 +549,7 @@ void BloscCodecRecord::stopMonitor()
     runReturn.wait();
     stopThread = false;
     monitorStarted = false;
-    setAlarm(" monitor is stopped",noAlarm,clientStatus);
+    setAlarm("stopMonitor success",noAlarm,clientStatus);
 }
 
 }}

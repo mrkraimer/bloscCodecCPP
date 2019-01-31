@@ -53,7 +53,8 @@ private:
     )
     : pvaClient(pvaClient),
       codecChannelName(codecChannelName),
-      channelConnected(false)
+      channelConnected(false),
+      firstStart(true)
     {
     }
     void connect();

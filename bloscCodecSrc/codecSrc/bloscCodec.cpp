@@ -69,7 +69,6 @@ bool BloscCodec::compressBlosc(
              pvSrc->getAs(sourcedata);
              elementSize = 1;
              decompressAddr = (void *)sourcedata.data();
-             decompressSize = pvSource->getLength()*elementSize;
         }
         break;
     case pvUByte:
@@ -79,7 +78,6 @@ bool BloscCodec::compressBlosc(
              pvSrc->getAs(sourcedata);
              elementSize = 1;
              decompressAddr = (void *)sourcedata.data();
-             decompressSize = pvSource->getLength()*elementSize;
         }
         break;
     case pvShort:
@@ -89,7 +87,6 @@ bool BloscCodec::compressBlosc(
              pvSrc->getAs(sourcedata);
              elementSize = 2;
              decompressAddr = (void *)sourcedata.data();
-             decompressSize = pvSource->getLength()*elementSize;
         }
         break;
     case pvUShort:
@@ -109,7 +106,6 @@ bool BloscCodec::compressBlosc(
              pvSrc->getAs(sourcedata);
              elementSize = 4;
              decompressAddr = (void *)sourcedata.data();
-             decompressSize = pvSource->getLength()*elementSize;
         }
         break;
     case pvUInt:
@@ -119,7 +115,6 @@ bool BloscCodec::compressBlosc(
              pvSrc->getAs(sourcedata);
              elementSize = 4;
              decompressAddr = (void *)sourcedata.data();
-             decompressSize = pvSource->getLength()*elementSize;
         }
         break;
     case pvLong:
@@ -129,7 +124,6 @@ bool BloscCodec::compressBlosc(
              pvSrc->getAs(sourcedata);
              elementSize = 8;
              decompressAddr = (void *)sourcedata.data();
-             decompressSize = pvSource->getLength()*elementSize;
         }
         break;
     case pvULong:
@@ -139,7 +133,6 @@ bool BloscCodec::compressBlosc(
              pvSrc->getAs(sourcedata);
              elementSize = 8;
              decompressAddr = (void *)sourcedata.data();
-             decompressSize = pvSource->getLength()*elementSize;
         }
         break;
     case pvFloat:
@@ -149,7 +142,6 @@ bool BloscCodec::compressBlosc(
              pvSrc->getAs(sourcedata);
              elementSize = 4;
              decompressAddr = (void *)sourcedata.data();
-             decompressSize = pvSource->getLength()*elementSize;
         }
         break;
     case pvDouble:
@@ -158,8 +150,7 @@ bool BloscCodec::compressBlosc(
              PVDoubleArray::const_svector sourcedata;
              pvSrc->getAs(sourcedata);
              elementSize = 8;
-             decompressAddr = (void *)sourcedata.data();
-             decompressSize = pvSource->getLength()*elementSize;
+             decompressAddr = (void *)sourcedata.data(); 
         }
         break;
     default:
@@ -169,6 +160,7 @@ bool BloscCodec::compressBlosc(
         message = mess;
         return false;
     }
+    decompressSize = pvSource->getLength()*elementSize;
     return compressBlosc(pvDest,decompressAddr,decompressSize,pvBloscArgs);
     
 }

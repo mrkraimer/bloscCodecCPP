@@ -35,6 +35,12 @@ The source code from **c-blosc/blosc** was copied to **codecCPP/bloscCodecSrc/c-
 
 This code was then build via the epics-base build system.
 
+## Documentation
+
+Douumentation is available at
+
+https://mrkraimer.github.io/website/bloscCodec/bloscCodec.html
+
 
 
 
