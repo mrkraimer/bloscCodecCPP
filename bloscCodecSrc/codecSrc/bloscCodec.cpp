@@ -13,7 +13,6 @@
 #include <pv/pvTimeStamp.h>
 #include <pv/alarm.h>
 #include <pv/pvAlarm.h>
-#include <pv/pvDatabase.h>
 #include <pv/pvIntrospect.h>
 
 #include <shareLib.h>

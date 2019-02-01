@@ -15,7 +15,6 @@
 #include <pv/pvTimeStamp.h>
 #include <pv/alarm.h>
 #include <pv/pvAlarm.h>
-#include <pv/pvDatabase.h>
 #include <pv/standardPVField.h>
 #include <pv/ntscalar.h>
 #include <pv/ntenum.h>
