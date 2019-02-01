@@ -8,4 +8,4 @@ PVDATA=${EPICS4_DIR}/pvDataCPP
 PVCOMMON=${EPICS4_DIR}/pvCommonCPP
 
 TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
-EPICS_BASE=/home/install/epics/base-7.0.2/modules
+EPICS_BASE=/home/install/epics/base-7.0.2
