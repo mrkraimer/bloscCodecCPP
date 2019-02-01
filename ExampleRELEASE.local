@@ -1,4 +1,4 @@
-EPICS4_DIR=/home/epicsv4/masterCPP
+EPICS4_DIR=/home/install/epics/base-7.0.2/modules
 PVDATABASE=${EPICS4_DIR}/pvDatabaseCPP
 PVA2PVA=${EPICS4_DIR}/pva2pva
 PVACLIENT=${EPICS4_DIR}/pvaClientCPP
@@ -8,4 +8,4 @@ PVDATA=${EPICS4_DIR}/pvDataCPP
 PVCOMMON=${EPICS4_DIR}/pvCommonCPP
 
 TEMPLATE_TOP=$(EPICS_BASE)/templates/makeBaseApp/top
-EPICS_BASE=/home/epicsv4/masterCPP/epics-base
+EPICS_BASE=/home/install/epics/base-7.0.2/modules

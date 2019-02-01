@@ -5,17 +5,13 @@ This is under construction.
 
 ## Building
 
-If a proper RELEASE.local file exists one directory levels above **codecCPP**, then just type:
+It can be built by:
 
-    make
-
-It can also be built by:
-
-    cp configure/ExampleRELEASE.local configure/RELEASE.local
+    cp ExampleRELEASE.local configure/RELEASE.local
     edit file configure/RELEASE.local
     make
 
-In **configure/RELEASE.local** it may only be necessary to change the definitions
+In **configure/RELEASE.local**  change the definitions
 of **EPICS4_DIR** and **EPICS_BASE**.
 
 
